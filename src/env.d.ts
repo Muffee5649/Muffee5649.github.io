@@ -33,6 +33,10 @@ interface ImportMetaEnv {
   readonly VITE_SERVER_HAS_API_PREFIX: 'true' | 'false'
   /** 认证模式，'single' | 'double' ==> 单token | 双token */
   readonly VITE_AUTH_MODE: 'single' | 'double'
+  /** Supabase 项目地址 */
+  readonly VITE_SUPABASE_URL?: string
+  /** Supabase 可公开的 publishable key */
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
   /** 是否清除console */
   readonly VITE_DELETE_CONSOLE: string
   // 更多环境变量...

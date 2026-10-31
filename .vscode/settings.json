@@ -98,5 +98,9 @@
     "Wechat",
     "WechatMiniprogram",
     "Weixin"
+  ],
+  "i18n-ally.localesPaths": [
+    "src/locale",
+    "src/pages/i18n"
   ]
 }

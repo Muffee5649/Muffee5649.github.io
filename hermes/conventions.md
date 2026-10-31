@@ -15,8 +15,13 @@
 - 不自动排序 import:条件编译注释可能包裹 import(eslint 已关 `perfectionist/sort-imports`,勿重新打开)
 - API 响应必须在 `src/api/` 定义接口类型,响应数据过边界校验后才使用
 
-## 3. 样式(UnoCSS)
+## 3. 样式与组件(UnoCSS / wot-ui)
 
+- **页面与组件优先使用 wot-ui**:`wd-*` 已通过 easycom 自动注册,能覆盖的交互不再手写等价原生实现
+- **反馈类交互优先 wot-ui hooks**:`useToast` / `useDialog`,并在页面内声明 `<wd-toast />` / `<wd-dialog />` 实例
+- **图标优先 `wd-icon` 内置图标名**;UnoCSS 图标仅作补充
+- wot-ui 覆盖不到时(自定义可视化、特殊布局)再用 UnoCSS + 原生标签
+- 不要深度覆盖 wd 组件内部类名,优先 `theme-vars` / CSS 变量
 - 优先原子类,减少自定义 CSS;常用快捷方式:`center`(flex 居中)
 - 主题色用 `text-primary` / `bg-primary`(uno.config.ts theme 定义,含 wot-ui 联动变量)
 - 安全区用自定义规则:`p-safe` / `pt-safe` / `pb-safe`(刘海屏/底部横条)

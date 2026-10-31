@@ -94,7 +94,15 @@ export default defineConfig({
   theme: {
     colors: {
       /** 主题色，用法如: text-primary */
-      primary: 'var(--wot-color-theme,#0957DE)',
+      primary: 'var(--wot-color-theme,#5D87FF)',
+    },
+    borderRadius: {
+      /** 数字圆角跟随系统圆角变量（设置页配置的百分比换算后的 px），用法如: rounded-3 */
+      1: 'calc(var(--app-radius, 12px) / 4)',
+      2: 'calc(var(--app-radius, 12px) / 2)',
+      3: 'var(--app-radius, 12px)',
+      4: 'calc(var(--app-radius, 12px) * 1.5)',
+      5: 'calc(var(--app-radius, 12px) * 2)',
     },
     fontSize: {
       /** 提供更小号的字体，用法如：text-2xs */

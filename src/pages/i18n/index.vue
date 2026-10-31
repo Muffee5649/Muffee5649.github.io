@@ -15,7 +15,6 @@ const languages = [
   {
     value: 'zh-Hans',
     name: '中文',
-    checked: 'true',
   },
   {
     value: 'en',
@@ -23,12 +22,12 @@ const languages = [
   },
 ]
 
-function radioChange(evt) {
-  // console.log(evt)
-  current.value = evt.detail.value
+function radioChange({ value }: { value: string | number | boolean | null }) {
+  const locale = String(value) as 'zh-Hans' | 'en'
+  current.value = locale
   // 下面2句缺一不可！！！
-  uni.setLocale(evt.detail.value)
-  i18n.global.locale = evt.detail.value
+  uni.setLocale(locale)
+  i18n.global.locale = locale
 
   // 底部tabbar需要重新设置一下
   setTabbarItem()
@@ -82,51 +81,24 @@ function radioChange(evt) {
     <view class="mt-12 text-green-500">
       切换语言
     </view>
-    <view class="uni-list">
-      <radio-group class="radio-group" @change="radioChange">
-        <label
-          v-for="item in languages"
-          :key="item.value"
-          class="uni-list-cell uni-list-cell-pd"
-        >
-          <view>
-            <radio :value="item.value" :checked="item.value === current" />
-          </view>
-          <view>{{ item.name }}</view>
-        </label>
-      </radio-group>
-    </view>
+    <wd-radio-group v-model="current" custom-class="mt-4" @change="radioChange">
+      <wd-radio
+        v-for="item in languages"
+        :key="item.value"
+        :value="item.value"
+        custom-class="my-1"
+      >
+        {{ item.name }}
+      </wd-radio>
+    </wd-radio-group>
 
     <!-- http://localhost:9000/#/pages/index/i18n -->
-    <button class="mb-44 mt-20" @click="testI18n">
+    <wd-button custom-class="mb-44 mt-20" @click="testI18n">
       测试弹窗
-    </button>
+    </wd-button>
   </view>
 </template>
 
 <style lang="scss">
-.uni-list {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  background-color: #fff;
-  border-radius: 12px;
-}
-
-.radio-group {
-  width: 200px;
-  margin: 10px auto;
-  border-radius: 12px;
-}
-
-.uni-list-cell {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  background-color: #bcecd1;
-}
+//
 </style>

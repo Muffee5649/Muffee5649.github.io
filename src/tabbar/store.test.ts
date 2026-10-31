@@ -25,7 +25,7 @@ function item(text: string, pagePath: string, roles?: string[]): CustomTabBarIte
 /** 首页所有人可见，「关于」仅 admin 可见 */
 const ADMIN_TAB_IS_LAST = [
   item('首页', 'pages/index/index'),
-  item('我的', 'pages/me/me'),
+  item('我的', 'pages/profile/profile'),
   item('关于', 'pages/about/about', ['admin']),
 ]
 
@@ -33,14 +33,23 @@ const ADMIN_TAB_IS_LAST = [
 const ADMIN_TAB_IS_HOME = [
   item('首页', 'pages/index/index', ['admin']),
   item('关于', 'pages/about/about'),
-  item('我的', 'pages/me/me'),
+  item('我的', 'pages/profile/profile'),
 ]
 
-async function setupStore(list: CustomTabBarItem[], userInfo?: { role?: string, roles?: string[] }) {
+async function setupStore(list: CustomTabBarItem[], userInfo?: { roles?: string[] }) {
   configState.list = list
   const { useUserStore } = await import('@/store/user')
   if (userInfo) {
-    useUserStore().setUserInfo({ userId: 1, username: 'u', nickname: 'U', ...userInfo })
+    useUserStore().setUserInfo({
+      userId: '1',
+      username: 'u',
+      nickname: 'U',
+      avatar: '',
+      email: '',
+      roles: [],
+      buttons: [],
+      ...userInfo,
+    })
   }
   return import('./store')
 }
@@ -58,11 +67,6 @@ describe('tabbarList 按 roles 过滤', () => {
 
   it('roles 数组命中时，显示该项', async () => {
     const { tabbarList } = await setupStore(ADMIN_TAB_IS_LAST, { roles: ['admin'] })
-    expect(tabbarList.value.map(i => i.text)).toEqual(['首页', '我的', '关于'])
-  })
-
-  it('单角色字段 role 命中时，同样显示该项', async () => {
-    const { tabbarList } = await setupStore(ADMIN_TAB_IS_LAST, { role: 'admin' })
     expect(tabbarList.value.map(i => i.text)).toEqual(['首页', '我的', '关于'])
   })
 
@@ -95,12 +99,20 @@ describe('curIdx 高亮', () => {
     const { tabbarStore, tabbarList } = await setupStore(ADMIN_TAB_IS_HOME)
 
     // 无角色：可见 [关于, 我的]，停在「我的」
-    tabbarStore.setAutoCurIdx('/pages/me/me')
+    tabbarStore.setAutoCurIdx('/pages/profile/profile')
     expect(tabbarList.value[tabbarStore.curIdx].text).toBe('我的')
 
     // 登录成为 admin：可见变成 [首页, 关于, 我的]，仍然应该高亮「我的」
     const { useUserStore } = await import('@/store/user')
-    useUserStore().setUserInfo({ userId: 1, username: 'u', nickname: 'U', roles: ['admin'] })
+    useUserStore().setUserInfo({
+      userId: '1',
+      username: 'u',
+      nickname: 'U',
+      avatar: '',
+      email: '',
+      roles: ['admin'],
+      buttons: [],
+    })
 
     expect(tabbarList.value.map(i => i.text)).toEqual(['首页', '关于', '我的'])
     expect(tabbarList.value[tabbarStore.curIdx].text).toBe('我的')
@@ -109,7 +121,7 @@ describe('curIdx 高亮', () => {
   it('跳转到非 tabbar 页面时保持当前高亮', async () => {
     const { tabbarStore, tabbarList } = await setupStore(ADMIN_TAB_IS_LAST)
 
-    tabbarStore.setAutoCurIdx('/pages/me/me')
+    tabbarStore.setAutoCurIdx('/pages/profile/profile')
     tabbarStore.setAutoCurIdx('/pages/detail/detail')
 
     expect(tabbarList.value[tabbarStore.curIdx].text).toBe('我的')
@@ -124,7 +136,7 @@ describe('curIdx 高亮', () => {
       seen.push(tabbarStore.curIdx)
     })
 
-    tabbarStore.setAutoCurIdx('/pages/me/me')
+    tabbarStore.setAutoCurIdx('/pages/profile/profile')
     await nextTick()
     stop()
 
@@ -135,7 +147,7 @@ describe('curIdx 高亮', () => {
   it('带 query 的路径也能正确高亮', async () => {
     const { tabbarStore, tabbarList } = await setupStore(ADMIN_TAB_IS_LAST)
 
-    tabbarStore.setAutoCurIdx('/pages/me/me?from=share')
+    tabbarStore.setAutoCurIdx('/pages/profile/profile?from=share')
 
     expect(tabbarList.value[tabbarStore.curIdx].text).toBe('我的')
   })
@@ -159,7 +171,7 @@ describe('getTabbarRedirectPath 运行时角色守卫', () => {
 
   it('未配置 roles 的 tabbar 页放行', async () => {
     const { getTabbarRedirectPath } = await setupStore(ADMIN_TAB_IS_LAST)
-    expect(getTabbarRedirectPath('/pages/me/me')).toBe('')
+    expect(getTabbarRedirectPath('/pages/profile/profile')).toBe('')
   })
 
   it('非 tabbar 页面不参与判断，交给各自的登录/权限逻辑', async () => {
@@ -177,7 +189,7 @@ describe('isPageTabbar', () => {
   it('tabbar 页面（含 H5 的 "/"）返回 true', async () => {
     const { isPageTabbar } = await setupStore(ADMIN_TAB_IS_LAST)
     expect(isPageTabbar('/')).toBe(true)
-    expect(isPageTabbar('/pages/me/me')).toBe(true)
+    expect(isPageTabbar('/pages/profile/profile')).toBe(true)
   })
 
   it('受限页也返回 true：角色不足时不高亮，但仍要有导航入口', async () => {

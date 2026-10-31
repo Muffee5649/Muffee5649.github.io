@@ -2,7 +2,7 @@ import type { UserRole } from '@/api/types/login'
 import type { CustomTabBarItem, CustomTabBarItemBadge } from './types'
 import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/store/user'
-import { HOME_PAGE } from '@/utils'
+import { HOME_PAGE } from '@/utils/homePage'
 
 import { tabbarList as _tabbarList, selectedTabbarStrategy, TABBAR_STRATEGY_MAP } from './config'
 
@@ -23,13 +23,7 @@ const userRoles = computed<UserRole[]>(() => {
   const userStore = useUserStore()
   // setup 语法的 pinia store 会自动解包 ref，这里必须直接取 userInfo，不能再取 .value
   const userInfo = userStore.userInfo
-  if (Array.isArray(userInfo?.roles) && userInfo.roles.length > 0) {
-    return userInfo.roles
-  }
-  if (userInfo?.role) {
-    return [userInfo.role]
-  }
-  return []
+  return Array.isArray(userInfo?.roles) ? userInfo.roles : []
 })
 
 /** item 不写 roles → 所有用户都能看到；写了 roles → 必须命中用户角色之一 */

@@ -2,6 +2,7 @@
 import { onHide, onLaunch, onShow } from '@dcloudio/uni-app'
 import { getCurrentInstance, onMounted, onUnmounted } from 'vue'
 import { navigateToInterceptor } from '@/router/interceptor'
+import { useSettingStore } from '@/store/setting'
 import { tabbarStore } from '@/tabbar/store'
 import { permission } from '@/router/permission'
 
@@ -12,6 +13,8 @@ router && permission.install(router)
 
 onLaunch((options) => {
   console.log('App.vue onLaunch', options)
+  // 应用本地持久化的语言设置（小程序重启后 uni.setLocale 会复位）
+  useSettingStore().syncLocale()
 })
 onShow((options) => {
   console.log('App.vue onShow', options)

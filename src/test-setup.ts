@@ -1,6 +1,10 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, vi } from 'vitest'
 
+// 测试环境没有 env/ 目录下的变量，这里给 Supabase 客户端提供占位值，避免模块加载时报错
+vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co')
+vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test')
+
 // 每个测试前重置 Pinia 实例，避免状态在测试间泄漏
 beforeEach(() => {
   // 不注册 pinia-plugin-persistedstate，测试只验证 store 逻辑，不验证持久化行为

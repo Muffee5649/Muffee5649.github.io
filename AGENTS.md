@@ -22,6 +22,10 @@
 2. **平台差异只用条件编译**:编译期能确定的不留运行时
 3. **UI 优先原子类**:先 UnoCSS,再自定义 CSS
 
+## UI 组件优先级(必遵)
+
+页面与全局组件优先使用 wot-ui(`wd-*`,easycom 自动注册):能覆盖的交互不再手写等价原生实现。反馈类交互优先 `useToast` / `useDialog`,并在页面内声明 `<wd-toast />` / `<wd-dialog />` 实例。wot-ui 覆盖不到时(自定义可视化、特殊布局)再用 UnoCSS + 原生标签,不要深度覆盖 wd 组件内部类名。细则见 [hermes/conventions.md](./hermes/conventions.md)。
+
 ## AI 辅助 Skills
 
 项目自带 `.agents/skills/`(信任项目后自动加载),按场景选用:

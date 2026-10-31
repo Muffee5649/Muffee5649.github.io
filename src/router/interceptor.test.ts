@@ -12,7 +12,15 @@ beforeEach(() => {
 async function invoke(url: string, userInfo?: { roles?: string[] }) {
   if (userInfo) {
     const { useUserStore } = await import('@/store/user')
-    useUserStore().setUserInfo({ userId: 1, username: 'u', nickname: 'U', ...userInfo })
+    useUserStore().setUserInfo({
+      userId: '1',
+      username: 'u',
+      nickname: 'U',
+      avatar: '',
+      email: '',
+      roles: userInfo.roles ?? [],
+      buttons: [],
+    })
   }
   const { navigateToInterceptor } = await import('./interceptor')
   return navigateToInterceptor.invoke({ url })
@@ -35,7 +43,7 @@ describe('navigateToInterceptor 角色守卫', () => {
   })
 
   it('未配置 roles 的 tabbar 页放行', async () => {
-    const result = await invoke('/pages/me/me')
+    const result = await invoke('/pages/profile/profile')
 
     expect(result).not.toBe(false)
     expect(uni.reLaunch).not.toHaveBeenCalled()
@@ -72,7 +80,7 @@ describe('navigateToInterceptor 首页就是受限页（issue #454 的核心场�
       selectedTabbarStrategy: 2,
       tabbarList: [
         { text: '首页', pagePath: 'pages/index/index', iconType: 'unocss', icon: 'i-carbon-home', roles: ['admin'] },
-        { text: '我的', pagePath: 'pages/me/me', iconType: 'unocss', icon: 'i-carbon-user' },
+        { text: '我的', pagePath: 'pages/profile/profile', iconType: 'unocss', icon: 'i-carbon-user' },
       ],
     }))
   })
@@ -82,14 +90,14 @@ describe('navigateToInterceptor 首页就是受限页（issue #454 的核心场�
     const result = await invoke('/')
 
     expect(result).toBe(false)
-    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/me/me' })
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/profile/profile' })
   })
 
   it('冷启动带上具体首页路径时同样被拦截', async () => {
     const result = await invoke('/pages/index/index')
 
     expect(result).toBe(false)
-    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/me/me' })
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/profile/profile' })
   })
 
   it('角色满足时冷启动放行', async () => {
