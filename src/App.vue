@@ -12,12 +12,12 @@ const router = proxy?.$router
 router && permission.install(router)
 
 onLaunch((options) => {
-  console.log('App.vue onLaunch', options)
+  // console.log('App.vue onLaunch', options)
   // 应用本地持久化的语言设置（小程序重启后 uni.setLocale 会复位）
   useSettingStore().syncLocale()
 })
 onShow((options) => {
-  console.log('App.vue onShow', options)
+  // console.log('App.vue onShow', options)
   // 处理直接进入页面路由的情况：如h5直接输入路由、微信小程序分享后进入等
   // https://github.com/unibest-tech/unibest/issues/192
   if (options?.path) {
@@ -28,7 +28,7 @@ onShow((options) => {
   }
 })
 onHide(() => {
-  console.log('App Hide')
+  // console.log('App Hide')
 })
 
 // #ifdef H5

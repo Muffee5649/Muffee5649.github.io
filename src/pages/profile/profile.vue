@@ -301,7 +301,7 @@ async function handleLogout() {
         class="ml-2 flex-none p-1 active:opacity-60"
         @click="openProfilePanel"
       >
-        <wd-icon name="edit" size="20px" color="#6b7280" />
+        <view class="i-ri-edit-line text-20px text-gray-500" />
       </view>
     </view>
 
@@ -323,16 +323,22 @@ async function handleLogout() {
       <wd-cell
         v-if="tokenStore.hasLogin"
         title="修改密码"
-        prefix-icon="lock"
         is-link
         @click="openPasswordPanel"
-      />
+      >
+        <template #prefix>
+          <view class="i-ri-lock-line mr-1 text-xl text-gray-500" />
+        </template>
+      </wd-cell>
       <wd-cell
         :title="$t('settings.title')"
-        prefix-icon="settings"
         is-link
         @click="goSettings"
-      />
+      >
+        <template #prefix>
+          <view class="i-ri-settings-3-line mr-1 text-xl text-gray-500" />
+        </template>
+      </wd-cell>
     </wd-cell-group>
 
     <!-- 操作按钮 -->
@@ -469,7 +475,7 @@ async function handleLogout() {
               class="h-20 w-20 rounded-full bg-gray-100"
             />
             <view class="absolute bottom-0 right-0 h-6 w-6 center rounded-full bg-primary">
-              <wd-icon name="camera-fill" size="14px" color="#fff" />
+              <view class="i-ri-camera-fill text-14px text-white" />
             </view>
           </button>
           <!-- #endif -->
@@ -481,7 +487,7 @@ async function handleLogout() {
               class="h-20 w-20 rounded-full bg-gray-100"
             />
             <view class="absolute bottom-0 right-0 h-6 w-6 center rounded-full bg-primary">
-              <wd-icon name="camera-fill" size="14px" color="#fff" />
+              <view class="i-ri-camera-fill text-14px text-white" />
             </view>
           </view>
           <!-- #endif -->

@@ -41,9 +41,9 @@ interface SettingItem {
 
 /** 设置项：图标与标题统一循环渲染，仅内容区域按 key 区分 */
 const settingItems: SettingItem[] = [
-  { key: 'themeColor', icon: 'font-colors', title: 'settings.themeColor' },
-  { key: 'radius', icon: 'scan', title: 'settings.radius' },
-  { key: 'language', icon: 'translate', title: 'settings.language' },
+  { key: 'themeColor', icon: 'i-ri-font-color', title: 'settings.themeColor' },
+  { key: 'radius', icon: 'i-ri-rounded-corner', title: 'settings.radius' },
+  { key: 'language', icon: 'i-ri-translate', title: 'settings.language' },
 ]
 
 function handleItemClick(key: SettingItemKey) {
@@ -100,10 +100,12 @@ function handleLanguageSelect({ index }: { index: number }) {
         v-for="item in settingItems"
         :key="item.key"
         :title="$t(item.title)"
-        :prefix-icon="item.icon"
         :is-link="item.key !== 'themeColor'"
         @click="handleItemClick(item.key)"
       >
+        <template #prefix>
+          <view :class="item.icon" class="mr-1 text-xl text-gray-500" />
+        </template>
         <view v-if="item.key === 'themeColor'" class="flex items-center justify-end gap-1">
           <view
             v-for="color in themeColorOptions"
@@ -112,7 +114,7 @@ function handleLanguageSelect({ index }: { index: number }) {
             :style="{ backgroundColor: color.value }"
             @click.stop="handleSwitchThemeColor(color.value)"
           >
-            <wd-icon v-if="settingStore.themeColor === color.value" name="check" size="14px" color="#fff" />
+            <view v-if="settingStore.themeColor === color.value" class="i-ri-check-line text-14px text-white" />
           </view>
         </view>
         <text v-else-if="item.key === 'radius'">{{ settingStore.radius }}%</text>
