@@ -1,8 +1,10 @@
-﻿<script lang="ts" setup>
+<script lang="ts" setup>
 import { computed, nextTick, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { storeToRefs } from 'pinia'
 import { useToast } from '@wot-ui/ui'
 import { t } from '@/locale/index'
+import { useCartStore } from '@/store/cart'
 import { DishService } from '@/service/ordering'
 import type { OrderingMenuCategory, OrderingMenuDish } from '@/service/ordering'
 import type { AppDishCardData } from '@/components/app-dish-card/app-dish-card.vue'
@@ -25,8 +27,9 @@ const categories = ref<OrderingMenuCategory[]>([])
 const activeCategory = ref<number | string>('')
 /** 右侧列表滚动锚点（分类 id → cat-{id}） */
 const anchor = ref('')
-/** 购物车：dishId → 数量 */
-const cart = ref<Record<number, number>>({})
+/** 购物车：dishId → 数量（store 管理，与下单确认页共享） */
+const cartStore = useCartStore()
+const { cart } = storeToRefs(cartStore)
 /** 购物车明细弹层 */
 const showCart = ref(false)
 /** 右侧列表当前滚动距离 */
@@ -153,15 +156,8 @@ function minusDish(dish: AppDishCardData) {
 
 /** 设置数量（弹层计数器用），≤ 0 时移除 */
 function setQty(dishId: number, qty: number) {
-  const next = { ...cart.value }
-  if (qty <= 0) {
-    delete next[dishId]
-  }
-  else {
-    next[dishId] = qty
-  }
-  cart.value = next
-  if (!Object.keys(next).length) {
+  cartStore.setQty(dishId, qty)
+  if (!Object.keys(cart.value).length) {
     showCart.value = false
   }
 }
@@ -172,7 +168,7 @@ function onCartChange(dishId: number, payload: { value: number | string }) {
 }
 
 function clearCart() {
-  cart.value = {}
+  cartStore.clear()
   showCart.value = false
 }
 
@@ -191,12 +187,13 @@ async function onCategoryChange({ value }: { value: number | string }) {
   anchor.value = `cat-${value}`
 }
 
+/** 下单：携带购物车跳转到下单确认页（选桌号、确认下单） */
 function checkout() {
   if (!totalCount.value) {
     return
   }
-  // TODO: 结算流程（依赖开台会话，订单页建设中）
-  toast.show(t('menus.cart.checkoutHint'))
+  showCart.value = false
+  uni.navigateTo({ url: '/pages/orders/ordering' })
 }
 
 async function loadMenu() {
