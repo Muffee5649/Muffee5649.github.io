@@ -37,6 +37,7 @@ export type {
   CheckInResult,
   CreateReservationResult,
   PreOrderItemInput,
+  ReservationDetail,
   ReservationInput,
   ReservationItem,
   ReservationPreOrderItem,

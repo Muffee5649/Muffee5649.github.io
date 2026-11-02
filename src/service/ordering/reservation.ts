@@ -157,10 +157,73 @@ function toPreOrdersJsonb(preOrders?: PreOrderItemInput[] | null): unknown {
   }))
 }
 
+/** 预定详情（编辑预填用，FR-RSV-06） */
+export interface ReservationDetail {
+  id: number
+  reservationNo: string
+  tableType: DiningTableType
+  tableId: number
+  guestName: string
+  phone: string
+  arrivalTime: string
+  partySize: number
+  prepMeal: boolean
+  note: string | null
+  status: ReservationStatus
+}
+
+/** 预定详情行（reservations 表直查） */
+interface ReservationDetailRow {
+  id: number
+  reservation_no: string
+  table_type: DiningTableType
+  table_id: number
+  guest_name: string
+  phone: string
+  arrival_time: string
+  party_size: number
+  prep_meal: boolean
+  note: string | null
+  status: ReservationStatus
+}
+
 /**
  * 预定服务（FR-RSV）
  */
 export const ReservationService = {
+  /**
+   * 查询预定详情（编辑表单预填用，FR-RSV-06）
+   */
+  async getDetail(id: number): Promise<ReservationDetail> {
+    const { data, error } = await supabase
+      .from('reservations')
+      .select(
+        'id, reservation_no, table_type, table_id, guest_name, phone, arrival_time, party_size, prep_meal, note, status',
+      )
+      .eq('id', id)
+      .single()
+
+    if (error || !data) {
+      throw mapOrderingError(error ?? new Error('预定不存在'))
+    }
+
+    const row = data as ReservationDetailRow
+
+    return {
+      id: row.id,
+      reservationNo: row.reservation_no,
+      tableType: row.table_type,
+      tableId: row.table_id,
+      guestName: row.guest_name,
+      phone: row.phone,
+      arrivalTime: row.arrival_time,
+      partySize: row.party_size,
+      prepMeal: row.prep_meal,
+      note: row.note,
+      status: row.status,
+    }
+  },
+
   /**
    * 创建预定（FR-RSV-01）：房间可指定具体桌，其余类型按人数随机分配；
    * 同桌已约定预定的到店时间间隔不足 120 分钟时提示冲突

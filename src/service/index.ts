@@ -42,6 +42,7 @@ export type {
   PlaceOrderItem,
   PlaceOrderParams,
   PreOrderItemInput,
+  ReservationDetail,
   ReservationInput,
   ReservationItem,
   ReservationPreOrderItem,
