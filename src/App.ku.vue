@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import type { ConfigProviderThemeVars } from '@wot-ui/ui'
 import { storeToRefs } from 'pinia'
 import FgTabbar from '@/tabbar/index.vue'
-import { getPrimaryThemeVars, getRadiusPx, useSettingStore } from '@/store/setting'
+import { getPrimaryThemeVars, getRadiusPx, getThemeRgbChannels, useSettingStore } from '@/store/setting'
 import { isPageTabbar } from './tabbar/store'
 import { currRoute } from './utils'
 
@@ -15,9 +15,9 @@ const themeVars = computed(
   () => getPrimaryThemeVars(themeColor.value) as ConfigProviderThemeVars,
 )
 
-/** UnoCSS primary、自定义 tabbar 主题色与全局圆角变量（百分比换算为 px） */
+/** UnoCSS primary（含透明度修饰）、自定义 tabbar 主题色与全局圆角变量（百分比换算为 px） */
 const themeStyle = computed(
-  () => `--wot-color-theme:${themeColor.value};--app-radius:${getRadiusPx(radius.value)}px;`,
+  () => `--wot-color-theme:${themeColor.value};--wot-color-theme-rgb:${getThemeRgbChannels(themeColor.value)};--app-radius:${getRadiusPx(radius.value)}px;`,
 )
 
 const isCurrentPageTabbar = ref(true)

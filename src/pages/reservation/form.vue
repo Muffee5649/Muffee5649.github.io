@@ -346,7 +346,7 @@ async function submit() {
               :key="opt.value"
               class="flex items-center justify-center border rounded-2 border-solid py-2 text-sm active:opacity-70"
               :class="form.tableType === opt.value
-                ? 'border-primary bg-primary/5 text-white font-bold'
+                ? 'border-primary bg-primary/5 text-primary font-bold'
                 : 'border-gray-200 text-gray-600'"
               @tap="form.tableType = opt.value"
             >
@@ -366,7 +366,7 @@ async function submit() {
                   : 'border-gray-200'"
                 @tap="form.tableId = table.id"
               >
-                <view class="text-sm" :class="form.tableId === table.id ? 'text-white font-bold' : 'text-gray-700'">
+                <view class="text-sm" :class="form.tableId === table.id ? 'text-primary font-bold' : 'text-gray-700'">
                   {{ table.tableNo }}
                 </view>
                 <view v-if="table.capacity" class="mt-0.5 text-2xs text-gray-400">
@@ -404,6 +404,11 @@ async function submit() {
               {{ arrivalLabel }}
               <view class="i-ri-arrow-right-s-line" />
             </view>
+          </view>
+
+          <!-- 预约间隔说明（系统设置的预约间隔 120 分钟） -->
+          <view class="mt-1.5 text-2xs text-red">
+            {{ $t('reservation.form.intervalHint', { minutes: 120 }) }}
           </view>
 
           <view class="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-3">

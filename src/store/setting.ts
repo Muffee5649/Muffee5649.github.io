@@ -69,6 +69,12 @@ function hexToRgb(hex: string): Rgb | null {
   return [(int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF]
 }
 
+/** 主题色转 RGB 通道串（供 UnoCSS 的 rgba(var(--wot-color-theme-rgb), alpha) 使用） */
+export function getThemeRgbChannels(color: string): string {
+  const rgb = hexToRgb(color)
+  return rgb ? rgb.join(',') : '93,135,255'
+}
+
 /** RGB 转十六进制颜色 */
 function rgbToHex(rgb: Rgb) {
   return `#${rgb.map(channel => Math.round(channel).toString(16).padStart(2, '0')).join('').toUpperCase()}`

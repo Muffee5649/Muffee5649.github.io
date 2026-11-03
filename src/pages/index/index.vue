@@ -173,6 +173,10 @@ function goReservation() {
   uni.navigateTo({ url: '/pages/reservation/index' })
 }
 
+function goDashboard() {
+  uni.navigateTo({ url: '/pages/dashboard/index' })
+}
+
 function goMenus() {
   uni.switchTab({ url: '/pages/menus/index' })
 }
@@ -232,6 +236,25 @@ function goMenus() {
             </view>
           </wd-button>
         </view>
+      </view>
+
+      <!-- 店内情况入口（长条按钮） -->
+      <view class="mt-3">
+        <wd-button
+          type="primary"
+          variant="plain"
+          size="large"
+          block
+          custom-style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); color: #fff;"
+          @click="goDashboard"
+        >
+          <view class="flex items-center gap-1.5">
+            <view class="i-ri-store-2-line text-lg" />
+            <text class="text-base font-bold">
+              {{ $t('dashboard.title') }}
+            </text>
+          </view>
+        </wd-button>
       </view>
 
       <!-- 桌台状态概览：融入主题色头部 -->

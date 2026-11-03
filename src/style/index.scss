@@ -13,6 +13,8 @@
 page {
   // 系统主题色，运行时由设置页切换覆盖
   --wot-color-theme: #5d87ff;
+  // 主题色 RGB 通道，供 UnoCSS 的 bg-primary/10 等透明度写法使用
+  --wot-color-theme-rgb: 93, 135, 255;
 
   // 修改按钮背景色
   // --wot-button-primary-bg-color: green;

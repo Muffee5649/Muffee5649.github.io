@@ -95,8 +95,12 @@ export default defineConfig({
   ],
   theme: {
     colors: {
-      /** 主题色，用法如: text-primary */
-      primary: 'var(--wot-color-theme,#5D87FF)',
+      /**
+       * 主题色，用法如: text-primary
+       * 使用 RGB 通道变量以支持透明度修饰，如 bg-primary/10
+       * （直接使用 var(--wot-color-theme) 时 UnoCSS 无法计算 alpha，会退化为纯色）
+       */
+      primary: 'rgba(var(--wot-color-theme-rgb, 93, 135, 255), <alpha-value>)',
     },
     borderRadius: {
       /** 数字圆角跟随系统圆角变量（设置页配置的百分比换算后的 px），用法如: rounded-3 */
