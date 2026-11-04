@@ -233,7 +233,7 @@ async function confirmOrder() {
             <view class="mt-1 flex items-center gap-1 text-3xs text-gray-400">
               <view class="i-ri-group-line" />
               <text class="truncate">
-                {{ table.capacity ? $t('ordering.table.capacity', { count: table.capacity }) : tableTypeLabel(table) }}
+                {{ table.capacity ? t('ordering.table.capacity', { count: table.capacity }) : tableTypeLabel(table) }}
               </text>
             </view>
             <view class="mt-1.5 flex items-center gap-1 text-3xs" :class="STATUS_TEXT[table.status]">
@@ -265,7 +265,7 @@ async function confirmOrder() {
             {{ $t('ordering.dishes.title') }}
           </view>
           <view class="text-2xs text-gray-400">
-            {{ $t('ordering.dishes.count', { count: totalCount }) }}
+            {{ t('ordering.dishes.count', { count: totalCount }) }}
           </view>
         </view>
         <view class="flex flex-col gap-2">
@@ -322,7 +322,7 @@ async function confirmOrder() {
     >
       <view class="min-w-0 flex-1">
         <view class="text-2xs text-gray-400">
-          {{ $t('ordering.total') }} · {{ $t('ordering.dishes.count', { count: totalCount }) }}
+          {{ $t('ordering.total') }} · {{ t('ordering.dishes.count', { count: totalCount }) }}
         </view>
         <view class="text-xl text-primary font-bold">
           {{ formatMoney(totalCents) }}

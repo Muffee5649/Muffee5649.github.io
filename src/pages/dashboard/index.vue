@@ -125,7 +125,7 @@ onPullDownRefresh(() => {
           {{ $t('dashboard.title') }}
         </view>
         <view class="text-2xs text-white/80">
-          {{ $t('dashboard.total', { count: tables.length }) }}
+          {{ t('dashboard.total', { count: tables.length }) }}
         </view>
       </view>
       <view class="mt-3 flex gap-2">
@@ -206,7 +206,7 @@ onPullDownRefresh(() => {
             <!-- 已约定：预定人到店信息 -->
             <view v-if="table.status === 'reserved' && table.upcomingReservation" class="mt-1.5">
               <view class="truncate text-2xs text-gray-700">
-                {{ table.upcomingReservation.guestName }} · {{ $t('home.partySize', { count: table.upcomingReservation.partySize }) }}
+                {{ table.upcomingReservation.guestName }} · {{ t('home.partySize', { count: table.upcomingReservation.partySize }) }}
               </view>
               <view class="text-3xs text-amber-600">
                 {{ formatArrival(table.upcomingReservation.arrivalTime) }}
@@ -219,7 +219,7 @@ onPullDownRefresh(() => {
                 {{ formatMoney(table.activeSession.totalAmountCents) }}
               </view>
               <view class="text-3xs text-gray-400">
-                {{ $t('dashboard.orders', { count: table.activeSession.orderCount }) }}
+                {{ t('dashboard.orders', { count: table.activeSession.orderCount }) }}
               </view>
             </view>
           </view>

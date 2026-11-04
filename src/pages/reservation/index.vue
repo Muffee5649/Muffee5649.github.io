@@ -346,7 +346,7 @@ function goSession(rsv: ReservationItem) {
                     {{ rsv.guestName }}
                   </text>
                   <text class="shrink-0 text-2xs text-gray-400">
-                    {{ $t('home.partySize', { count: rsv.partySize }) }}
+                    {{ t('home.partySize', { count: rsv.partySize }) }}
                   </text>
                 </view>
                 <view class="mt-0.5 truncate text-2xs text-gray-400">
@@ -362,7 +362,7 @@ function goSession(rsv: ReservationItem) {
             <view class="mt-2.5 flex flex-col gap-1 text-xs text-gray-600">
               <view class="flex items-center gap-1.5">
                 <view class="i-ri-restaurant-line shrink-0 text-gray-300" />
-                {{ tableTypeLabel(rsv) }} · {{ $t('home.tableLabel', { no: rsv.tableNo }) }}
+                {{ tableTypeLabel(rsv) }} · {{ t('home.tableLabel', { no: rsv.tableNo }) }}
                 <wd-tag v-if="rsv.prepMeal" type="warning" variant="light" size="small" round>
                   {{ $t('home.prepMeal') }}
                 </wd-tag>
@@ -388,7 +388,7 @@ function goSession(rsv: ReservationItem) {
                 @tap="togglePreOrders(rsv)"
               >
                 <view class="i-ri-file-list-3-line" />
-                {{ $t('reservation.preOrders', { count: rsv.preOrderCount }) }}
+                {{ t('reservation.preOrders', { count: rsv.preOrderCount }) }}
                 <view :class="expandedId === rsv.id ? 'i-ri-arrow-up-s-line' : 'i-ri-arrow-down-s-line'" />
               </view>
               <view v-if="expandedId === rsv.id" class="mt-2 divide-y divide-gray-100">

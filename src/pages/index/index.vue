@@ -180,13 +180,37 @@ function goDashboard() {
 function goMenus() {
   uni.switchTab({ url: '/pages/menus/index' })
 }
+
+/**
+ * 自定义导航栏顶部安全距离：
+ * 微信小程序的 env(safe-area-inset-top) 在安卓上为 0，需按状态栏高度留白；
+ * 同时预留右上角胶囊按钮宽度，避免品牌行右侧内容被遮挡。
+ */
+let statusBarHeight = 0
+let capsuleInset = 0
+// #ifdef MP-WEIXIN
+{
+  const windowInfo = uni.getWindowInfo()
+  statusBarHeight = windowInfo.statusBarHeight ?? 0
+  const capsule = uni.getMenuButtonBoundingClientRect()
+  if (capsule?.left) {
+    capsuleInset = windowInfo.windowWidth - capsule.left
+  }
+}
+// #endif
+// #ifndef MP-WEIXIN
+statusBarHeight = uni.getSystemInfoSync().statusBarHeight ?? 0
+// #endif
 </script>
 
 <template>
   <view class="home overflow-hidden bg-gray-100">
     <!-- 顶部品牌区 + 主操作（主题色背景，固定高度不参与滚动） -->
-    <view class="bg-primary px-4 pb-7 pt-safe">
-      <view class="flex items-center justify-between pt-3">
+    <view class="bg-primary px-4 pb-7" :style="{ paddingTop: `${statusBarHeight + 12}px` }">
+      <view
+        class="flex items-center justify-between"
+        :style="capsuleInset ? { paddingRight: `${capsuleInset}px` } : undefined"
+      >
         <view class="text-lg text-white font-bold">
           {{ $t('home.brand') }}
         </view>
@@ -327,7 +351,7 @@ function goMenus() {
                   {{ formatMoney(session.totalAmountCents) }}
                 </view>
                 <view class="text-2xs text-gray-400">
-                  {{ $t('home.sessionOrders', { count: session.orderCount }) }} · {{ session.sessionNo }}
+                  {{ t('home.sessionOrders', { count: session.orderCount }) }} · {{ session.sessionNo }}
                 </view>
               </view>
             </view>
@@ -361,10 +385,10 @@ function goMenus() {
                   </wd-tag>
                 </view>
                 <view class="text-xs text-gray-800">
-                  {{ rsv.guestName }} · {{ $t('home.partySize', { count: rsv.partySize }) }}
+                  {{ rsv.guestName }} · {{ t('home.partySize', { count: rsv.partySize }) }}
                 </view>
                 <view class="truncate text-2xs text-gray-400">
-                  {{ tableTypeLabel(rsv.tableType) }} · {{ $t('home.tableLabel', { no: rsv.tableNo }) }}<template v-if="rsv.prepMeal">
+                  {{ tableTypeLabel(rsv.tableType) }} · {{ t('home.tableLabel', { no: rsv.tableNo }) }}<template v-if="rsv.prepMeal">
                     · {{ $t('home.prepMeal') }}
                   </template>
                 </view>

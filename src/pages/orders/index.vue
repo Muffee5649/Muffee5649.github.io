@@ -176,9 +176,9 @@ function goDetail(session: SessionListItem) {
             <view class="text-2xs text-gray-400">
               {{ formatDateTime(session.openedAt) }}
               <template v-if="session.dinerCount">
-                · {{ $t('home.partySize', { count: session.dinerCount }) }}
+                · {{ t('home.partySize', { count: session.dinerCount }) }}
               </template>
-              · {{ $t('home.sessionOrders', { count: session.orderCount }) }}
+              · {{ t('home.sessionOrders', { count: session.orderCount }) }}
             </view>
             <view class="text-lg text-primary font-bold">
               {{ formatMoney(sessionAmount(session)) }}

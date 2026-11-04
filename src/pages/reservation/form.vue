@@ -370,7 +370,7 @@ async function submit() {
                   {{ table.tableNo }}
                 </view>
                 <view v-if="table.capacity" class="mt-0.5 text-2xs text-gray-400">
-                  {{ $t('ordering.table.capacity', { count: table.capacity }) }}
+                  {{ t('ordering.table.capacity', { count: table.capacity }) }}
                 </view>
               </view>
             </view>
@@ -408,7 +408,7 @@ async function submit() {
 
           <!-- 预约间隔说明（系统设置的预约间隔 120 分钟） -->
           <view class="mt-1.5 text-2xs text-red">
-            {{ $t('reservation.form.intervalHint', { minutes: 120 }) }}
+            {{ t('reservation.form.intervalHint', { minutes: 120 }) }}
           </view>
 
           <view class="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-3">

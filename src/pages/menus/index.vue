@@ -292,7 +292,7 @@ onPullDownRefresh(() => {
           {{ formatMoney(totalCents) }}
         </view>
         <view class="text-3xs text-gray-400">
-          {{ $t('menus.cart.title', { count: totalCount }) }}
+          {{ t('menus.cart.title', { count: totalCount }) }}
         </view>
       </view>
       <wd-button
@@ -316,7 +316,7 @@ onPullDownRefresh(() => {
     >
       <view class="flex items-center justify-between px-4 pb-1 pt-4">
         <text class="text-sm text-gray-800 font-bold">
-          {{ $t('menus.cart.title', { count: totalCount }) }}
+          {{ t('menus.cart.title', { count: totalCount }) }}
         </text>
         <view class="flex items-center gap-1 text-3xs text-gray-400 active:opacity-70" @tap="clearCart">
           <view class="i-ri-delete-bin-line text-14px" />

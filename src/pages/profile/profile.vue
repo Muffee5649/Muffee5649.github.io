@@ -29,7 +29,7 @@ const dialog = useDialog()
 const { userInfo } = storeToRefs(userStore)
 
 /** 角色展示文案 */
-const roleText = computed(() => (userInfo.value.roles?.length ? userInfo.value.roles.join('、') : '暂无角色'))
+const roleText = computed(() => (userInfo.value.roles?.length ? userInfo.value.roles.join('、') : t('profile.role.none')))
 
 /** 微信登录生成的虚拟邮箱后缀，带此后缀表示尚未绑定真实邮箱 */
 const VIRTUAL_EMAIL_SUFFIX = '@wechat.local'
@@ -40,7 +40,7 @@ const isVirtualEmail = computed(
 )
 
 /** 邮箱展示文案 */
-const emailText = computed(() => (isVirtualEmail.value ? '未绑定' : userInfo.value.email))
+const emailText = computed(() => (isVirtualEmail.value ? t('profile.email.unbound') : userInfo.value.email))
 
 /** 资料编辑面板 */
 const profileVisible = ref(false)
@@ -107,7 +107,7 @@ async function submitProfile() {
   }
   const nickname = profileForm.nickname.trim()
   if (!nickname) {
-    toast.error('昵称不能为空')
+    toast.error(t('profile.nicknameRequired'))
     return
   }
   profileSaving.value = true
@@ -121,10 +121,10 @@ async function submitProfile() {
     await UserService.updateProfile({ nickName: nickname })
     userStore.setUserInfo({ ...userInfo.value, nickname, avatar })
     profileVisible.value = false
-    toast.success('资料已保存')
+    toast.success(t('profile.saveSuccess'))
   }
   catch (error) {
-    toast.error(error instanceof Error ? error.message : '保存失败')
+    toast.error(error instanceof Error ? error.message : t('profile.saveFailed'))
   }
   finally {
     profileSaving.value = false
@@ -186,7 +186,7 @@ async function submitPassword() {
       return
     }
     passwordVisible.value = false
-    toast.success('密码修改成功')
+    toast.success(t('profile.passwordSuccess'))
   }
   finally {
     passwordSubmitting.value = false
@@ -233,7 +233,7 @@ async function submitEmailCode() {
       return
     }
     emailCodeSent.value = true
-    toast.success('验证码已发送，请查收邮箱')
+    toast.success(t('profile.emailCodeSent'))
   }
   finally {
     emailSending.value = false
@@ -254,10 +254,10 @@ async function submitEmailConfirm() {
     }
     await userStore.fetchUserInfo()
     emailVisible.value = false
-    toast.success('邮箱绑定成功')
+    toast.success(t('profile.emailBindSuccess'))
   }
   catch (error) {
-    toast.error(error instanceof Error ? error.message : '邮箱绑定失败')
+    toast.error(error instanceof Error ? error.message : t('profile.emailBindFailed'))
   }
   finally {
     emailConfirming.value = false
@@ -267,15 +267,15 @@ async function submitEmailConfirm() {
 /** 退出登录 */
 async function handleLogout() {
   const result = await dialog.confirm({
-    title: '提示',
-    msg: '确定要退出登录吗？',
+    title: t('profile.logoutConfirmTitle'),
+    msg: t('profile.logoutConfirm'),
   })
   if (result.action !== 'confirm') {
     return
   }
   await tokenStore.logout()
   profileVisible.value = false
-  toast.success('退出登录成功')
+  toast.success(t('profile.logoutSuccess'))
 }
 </script>
 
@@ -290,10 +290,10 @@ async function handleLogout() {
       />
       <view class="ml-4 flex-1">
         <view class="text-lg text-gray-800">
-          {{ userInfo.username ? userInfo.nickname || userInfo.username : '未登录' }}
+          {{ userInfo.username ? userInfo.nickname || userInfo.username : $t('profile.notLoggedIn') }}
         </view>
         <view class="mt-1 text-sm text-gray-500">
-          {{ userInfo.username ? `@${userInfo.username}` : '登录后可同步个人信息' }}
+          {{ userInfo.username ? `@${userInfo.username}` : $t('profile.loginHint') }}
         </view>
       </view>
       <view
@@ -312,17 +312,17 @@ async function handleLogout() {
       border
       custom-class="mx-3 mt-3 overflow-hidden rounded-3"
     >
-      <wd-cell title="用户名" :value="userInfo.username || '-'" />
-      <wd-cell title="昵称" :value="userInfo.nickname || '-'" />
-      <wd-cell title="邮箱" :value="emailText" is-link @click="openEmailPanel" />
-      <wd-cell title="角色" :value="roleText" />
+      <wd-cell :title="$t('profile.username')" :value="userInfo.username || '-'" />
+      <wd-cell :title="$t('profile.nickname')" :value="userInfo.nickname || '-'" />
+      <wd-cell :title="$t('profile.email')" :value="emailText" is-link @click="openEmailPanel" />
+      <wd-cell :title="$t('profile.role')" :value="roleText" />
     </wd-cell-group>
 
     <!-- 设置入口 -->
     <wd-cell-group center custom-class="mx-3 mt-3 overflow-hidden rounded-3">
       <wd-cell
         v-if="tokenStore.hasLogin"
-        title="修改密码"
+        :title="$t('profile.changePassword')"
         is-link
         @click="openPasswordPanel"
       >
@@ -344,10 +344,10 @@ async function handleLogout() {
     <!-- 操作按钮 -->
     <view class="mb-6 mt-auto px-3 pt-6">
       <wd-button v-if="tokenStore.hasLogin" type="danger" size="large" block @click="handleLogout">
-        退出登录
+        {{ $t('profile.logout') }}
       </wd-button>
       <wd-button v-else type="primary" size="large" block @click="handleLogin">
-        登录
+        {{ $t('profile.login') }}
       </wd-button>
     </view>
 
@@ -361,28 +361,28 @@ async function handleLogout() {
     >
       <view class="p-4">
         <view class="text-center text-base text-gray-800">
-          修改密码
+          {{ $t('profile.changePassword') }}
         </view>
         <wd-input
           v-model="passwordForm.current"
-          placeholder="当前密码"
+          :placeholder="$t('profile.currentPassword')"
           show-password
           clearable
           custom-class="mt-4"
         />
         <wd-input
           v-model="passwordForm.next"
-          placeholder="新密码（不少于 6 位）"
+          :placeholder="$t('profile.newPassword')"
           show-password
           clearable
           custom-class="mt-3"
         />
         <view class="mt-6 flex gap-3">
           <wd-button block @click="passwordVisible = false">
-            取消
+            {{ $t('profile.cancel') }}
           </wd-button>
           <wd-button block type="primary" :loading="passwordSubmitting" @click="submitPassword">
-            确定
+            {{ $t('profile.confirm') }}
           </wd-button>
         </view>
       </view>
@@ -399,14 +399,14 @@ async function handleLogout() {
     >
       <view class="p-4">
         <view class="text-center text-base text-gray-800">
-          绑定邮箱
+          {{ $t('profile.bindEmail') }}
         </view>
         <view class="mt-2 text-center text-xs text-gray-400">
-          绑定真实邮箱后可用邮箱找回账号
+          {{ $t('profile.bindEmailHint') }}
         </view>
         <wd-input
           v-model="emailForm.email"
-          placeholder="请输入邮箱"
+          :placeholder="$t('profile.emailPlaceholder')"
           clearable
           :disabled="emailCodeSent"
           custom-class="mt-4"
@@ -414,7 +414,7 @@ async function handleLogout() {
         <wd-input
           v-if="emailCodeSent"
           v-model="emailForm.code"
-          placeholder="请输入 6 位验证码"
+          :placeholder="$t('profile.codePlaceholder')"
           type="number"
           :maxlength="6"
           clearable
@@ -422,7 +422,7 @@ async function handleLogout() {
         />
         <view class="mt-6 flex gap-3">
           <wd-button block :disabled="emailSending || emailConfirming" @click="closeEmailPanel">
-            取消
+            {{ $t('profile.cancel') }}
           </wd-button>
           <wd-button
             v-if="!emailCodeSent"
@@ -431,10 +431,10 @@ async function handleLogout() {
             :loading="emailSending"
             @click="submitEmailCode"
           >
-            发送验证码
+            {{ $t('profile.sendCode') }}
           </wd-button>
           <wd-button v-else block type="primary" :loading="emailConfirming" @click="submitEmailConfirm">
-            确认绑定
+            {{ $t('profile.confirmBind') }}
           </wd-button>
         </view>
         <view
@@ -442,7 +442,7 @@ async function handleLogout() {
           class="mt-3 text-center text-xs text-primary active:opacity-60"
           @click="submitEmailCode"
         >
-          重新发送验证码
+          {{ $t('profile.resendCode') }}
         </view>
       </view>
     </wd-popup>
@@ -458,7 +458,7 @@ async function handleLogout() {
     >
       <view class="p-4">
         <view class="text-center text-base text-gray-800">
-          编辑资料
+          {{ $t('profile.editProfile') }}
         </view>
 
         <!-- 头像选择：微信端使用 chooseAvatar 能力，其余端走相册 -->
@@ -494,17 +494,17 @@ async function handleLogout() {
         </view>
         <view class="mt-2 text-center text-xs text-gray-400">
           <!-- #ifdef MP-WEIXIN -->
-          点击头像可选择微信头像
+          {{ $t('profile.avatarTipWx') }}
           <!-- #endif -->
           <!-- #ifndef MP-WEIXIN -->
-          点击头像可从相册选择
+          {{ $t('profile.avatarTipAlbum') }}
           <!-- #endif -->
         </view>
 
         <wd-input
           v-model="profileForm.nickname"
           :type="nicknameInputType"
-          placeholder="请输入昵称"
+          :placeholder="$t('profile.nicknamePlaceholder')"
           clearable
           :maxlength="20"
           custom-class="mt-4"
@@ -512,10 +512,10 @@ async function handleLogout() {
 
         <view class="mt-6 flex gap-3">
           <wd-button block :disabled="profileSaving" @click="closeProfilePanel">
-            取消
+            {{ $t('profile.cancel') }}
           </wd-button>
           <wd-button block type="primary" :loading="profileSaving" @click="submitProfile">
-            保存
+            {{ $t('profile.save') }}
           </wd-button>
         </view>
       </view>

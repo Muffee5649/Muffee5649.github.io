@@ -335,7 +335,7 @@ function goOrdering() {
                     {{ item.dishName }}
                   </text>
                   <text v-if="item.refundedQuantity" class="shrink-0 text-2xs text-gray-400">
-                    {{ $t('orders.refunded', { count: item.refundedQuantity }) }}
+                    {{ t('orders.refunded', { count: item.refundedQuantity }) }}
                   </text>
                 </view>
                 <view class="mt-0.5 truncate text-2xs text-gray-400">
@@ -401,7 +401,7 @@ function goOrdering() {
     >
       <view class="min-w-0 flex-1">
         <view class="text-2xs text-gray-400">
-          {{ $t('home.sessionOrders', { count: session.orderCount }) }} · {{ $t('ordering.total') }}
+          {{ t('home.sessionOrders', { count: session.orderCount }) }} · {{ $t('ordering.total') }}
         </view>
         <view class="text-xl text-primary font-bold">
           {{ formatMoney(session.totalAmountCents) }}
@@ -444,7 +444,7 @@ function goOrdering() {
           <wd-input-number v-model="refundQty" :min="1" :max="refundItem.effectiveQuantity" />
         </view>
         <view class="mt-2 text-right text-2xs text-gray-400">
-          {{ $t('orders.refund.remaining', { count: refundItem.effectiveQuantity }) }}
+          {{ t('orders.refund.remaining', { count: refundItem.effectiveQuantity }) }}
         </view>
         <wd-button
           type="danger"
