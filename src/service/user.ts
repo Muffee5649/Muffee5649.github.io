@@ -74,6 +74,8 @@ const GENDER_MAP: Record<string, string> = {
   女: 'female',
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/
+
 /**
  * 将界面性别转换为数据库枚举值
  */
@@ -233,6 +235,59 @@ export const UserService = {
   },
 
   /**
+   * 更新当前登录用户的真实邮箱
+   * 邮箱只写入 profiles，不修改 Supabase Auth 的虚拟登录邮箱
+   */
+  async updateEmail(email: string): Promise<void> {
+    const normalized = email.trim().toLowerCase()
+    if (!EMAIL_PATTERN.test(normalized)) {
+      throw new ServiceError('邮箱格式不正确', ServiceStatus.error)
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      throw new ServiceError('登录已过期，请重新登录', ServiceStatus.unauthorized)
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileError) {
+      throw new ServiceError(profileError.message, ServiceStatus.error)
+    }
+
+    if ((profile?.email ?? '').toLowerCase() === normalized) {
+      return
+    }
+
+    const { data: available, error: checkError } = await supabase.rpc('is_email_available', {
+      p_email: normalized,
+    })
+    if (checkError) {
+      throw new ServiceError(checkError.message, ServiceStatus.error)
+    }
+    if (!available) {
+      throw new ServiceError('该邮箱已被使用', ServiceStatus.error)
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ email: normalized })
+      .eq('id', user.id)
+
+    if (error) {
+      throw new ServiceError(error.message, ServiceStatus.error)
+    }
+  },
+
+  /**
    * 获取当前登录用户资料
    * 昵称 / 手机 / 性别存放在 profiles 表，姓名 / 地址 / 个人介绍存放在用户元数据
    */
@@ -260,10 +315,10 @@ export const UserService = {
 
     return {
       userId: user.id,
-      userName: profile?.username ?? user.email ?? '',
+      userName: profile?.username ?? '',
       nickName: profile?.nickname ?? profile?.username ?? '',
       realName: readMeta('real_name'),
-      userEmail: profile?.email ?? user.email ?? '',
+      userEmail: profile?.email ?? '',
       userPhone: profile?.phone ?? '',
       userGender: profile?.gender ?? 'unknown',
       address: readMeta('address'),

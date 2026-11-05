@@ -1,5 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/http/supabase'
+import { t } from '@/locale/index'
 import { ServiceError, ServiceStatus } from './shared'
 import type { AuthUserInfo } from './types'
 
@@ -7,14 +8,12 @@ import type { AuthUserInfo } from './types'
  * 注册参数
  */
 export interface RegisterParams {
-  /** 邮箱 */
+  /** 真实邮箱（记录到 profiles，不作为 Supabase Auth 登录邮箱） */
   email: string
   /** 用户名（3-20 个字符，大小写不敏感且唯一） */
   username: string
   /** 密码（不少于 6 位） */
   password: string
-  /** 邮箱确认后的跳转地址 */
-  emailRedirectTo?: string
 }
 
 /**
@@ -63,6 +62,12 @@ const USERNAME_MIN_LENGTH = 3
 const USERNAME_MAX_LENGTH = 20
 const PASSWORD_MIN_LENGTH = 6
 
+/** 生成虚拟 Auth 邮箱：时间 id + 随机串，确保注册并发下不重复 */
+function createVirtualEmail(domain: 'email.auth' | 'wechat.auth'): string {
+  const timeId = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+  return `${timeId}@${domain}`
+}
+
 function fail<T = AuthSessionData>(message: string, code?: string): AuthResult<T> {
   return {
     data: null,
@@ -76,9 +81,43 @@ interface SupabaseLikeError {
   status?: number
 }
 
+/**
+ * Supabase Auth 错误码 → 多语言 key
+ * 完整错误码参考：https://supabase.com/docs/guides/auth/debugging/error-codes
+ */
+const AUTH_ERROR_I18N: Record<string, string> = {
+  invalid_credentials: 'auth.error.invalidCredentials',
+  email_not_confirmed: 'auth.error.emailNotConfirmed',
+  phone_not_confirmed: 'auth.error.phoneNotConfirmed',
+  user_not_found: 'auth.error.userNotFound',
+  user_banned: 'auth.error.userBanned',
+  user_already_exists: 'auth.error.userAlreadyExists',
+  email_exists: 'auth.error.emailExists',
+  weak_password: 'auth.error.weakPassword',
+  same_password: 'auth.error.samePassword',
+  signup_disabled: 'auth.error.signupDisabled',
+  email_provider_disabled: 'auth.error.emailProviderDisabled',
+  email_address_invalid: 'auth.error.emailAddressInvalid',
+  validation_failed: 'auth.error.validationFailed',
+  too_many_requests: 'auth.error.tooManyRequests',
+  over_request_rate_limit: 'auth.error.tooManyRequests',
+  over_email_send_rate_limit: 'auth.error.overEmailSendRateLimit',
+  request_timeout: 'auth.error.requestTimeout',
+  unexpected_failure: 'auth.error.unexpectedFailure',
+  conflict: 'auth.error.conflict',
+  session_expired: 'auth.error.sessionExpired',
+  session_not_found: 'auth.error.sessionExpired',
+  refresh_token_not_found: 'auth.error.sessionExpired',
+  bad_jwt: 'auth.error.sessionExpired',
+  no_authorization: 'auth.error.noAuthorization',
+  otp_expired: 'auth.error.otpExpired',
+  reauthentication_needed: 'auth.error.reauthenticationNeeded',
+}
+
 function toServiceError(error: SupabaseLikeError): AuthServiceError {
+  const i18nKey = error.code ? AUTH_ERROR_I18N[error.code] : undefined
   return {
-    message: error.message,
+    message: i18nKey ? t(i18nKey) : error.message || t('auth.error.unknown'),
     code: error.code ?? undefined,
     status: error.status,
   }
@@ -90,12 +129,12 @@ function toServiceError(error: SupabaseLikeError): AuthServiceError {
 export const AuthService = {
   /**
    * 注册
-   * 用户名通过 signUp 的 user_metadata 传递，由数据库触发器写入 profiles 表
+   * Auth 使用时间 id 生成的虚拟邮箱；真实邮箱通过 user_metadata 传给数据库触发器写入 profiles
    */
   async register(params: RegisterParams): Promise<AuthResult> {
     const email = params.email.trim().toLowerCase()
     const username = params.username.trim()
-    const { password, emailRedirectTo } = params
+    const { password } = params
 
     if (!EMAIL_PATTERN.test(email)) {
       return fail('邮箱格式不正确')
@@ -107,23 +146,30 @@ export const AuthService = {
       return fail(`密码长度不能少于 ${PASSWORD_MIN_LENGTH} 个字符`)
     }
 
-    // 提前校验用户名占用，最终唯一性由数据库唯一索引保证
-    const { data: available, error: checkError } = await supabase.rpc('is_username_available', {
-      p_username: username,
-    })
-    if (checkError) {
-      return { data: null, error: toServiceError(checkError) }
+    // 提前校验用户名与真实邮箱占用，最终唯一性由数据库保证
+    const [{ data: usernameAvailable, error: usernameError }, { data: emailAvailable, error: emailError }]
+      = await Promise.all([
+        supabase.rpc('is_username_available', { p_username: username }),
+        supabase.rpc('is_email_available', { p_email: email }),
+      ])
+    if (usernameError) {
+      return { data: null, error: toServiceError(usernameError) }
     }
-    if (!available) {
+    if (emailError) {
+      return { data: null, error: toServiceError(emailError) }
+    }
+    if (!usernameAvailable) {
       return fail('用户名已被占用', 'username_taken')
+    }
+    if (!emailAvailable) {
+      return fail('该邮箱已被使用', 'email_taken')
     }
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: createVirtualEmail('email.auth'),
       password,
       options: {
-        data: { username },
-        emailRedirectTo,
+        data: { username, email },
       },
     })
     if (error) {
@@ -135,33 +181,35 @@ export const AuthService = {
 
   /**
    * 登录
-   * account 含 @ 时按邮箱登录，否则先解析用户名再登录
+   * account 支持用户名、真实邮箱、虚拟 Auth 邮箱三种形式
    */
   async login(params: LoginParams): Promise<AuthResult> {
     const account = params.account.trim()
     const { password } = params
 
     if (!account || !password) {
-      return fail('请输入账号和密码')
+      return fail(t('auth.error.missingCredentials'))
     }
 
-    let email = account
-    if (!EMAIL_PATTERN.test(account)) {
-      const { data: resolvedEmail, error } = await supabase.rpc('get_email_by_username', {
-        p_username: account,
-      })
-      if (error) {
-        return { data: null, error: toServiceError(error) }
-      }
-      if (!resolvedEmail) {
-        return fail('用户名或密码错误', 'invalid_credentials')
-      }
-      email = resolvedEmail
-    }
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: resolvedEmail, error } = await supabase.rpc('resolve_login_email', {
+      p_account: account,
+    })
     if (error) {
       return { data: null, error: toServiceError(error) }
+    }
+
+    // 用户名 / 真实邮箱通过 profiles 解析；虚拟邮箱未命中时直接使用
+    const email = resolvedEmail || (EMAIL_PATTERN.test(account) ? account : null)
+    if (!email) {
+      return fail(t('auth.error.invalidCredentials'), 'invalid_credentials')
+    }
+
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (signInError) {
+      return { data: null, error: toServiceError(signInError) }
     }
 
     return { data, error: null }
@@ -208,69 +256,6 @@ export const AuthService = {
   },
 
   /**
-   * 向新邮箱发送改绑验证码
-   * 需要在 Supabase 控制台关闭 “Secure email change”，只向新邮箱发验证码
-   */
-  async sendEmailChangeCode(newEmail: string): Promise<AuthResult<null>> {
-    const email = newEmail.trim().toLowerCase()
-    if (!EMAIL_PATTERN.test(email)) {
-      return fail<null>('邮箱格式不正确')
-    }
-
-    const { data, error } = await supabase.auth.getUser()
-    if (error || !data.user) {
-      return fail<null>('登录已过期，请重新登录')
-    }
-    if (data.user.email?.toLowerCase() === email) {
-      return fail<null>('新邮箱与当前邮箱相同')
-    }
-
-    const { error: updateError } = await supabase.auth.updateUser({ email })
-    if (updateError) {
-      return { data: null, error: toServiceError(updateError) }
-    }
-
-    return { data: null, error: null }
-  },
-
-  /**
-   * 用邮箱验证码完成改绑，并同步 profiles.email
-   */
-  async confirmEmailChange(newEmail: string, token: string): Promise<AuthResult<null>> {
-    const email = newEmail.trim().toLowerCase()
-    const code = token.trim()
-    if (!EMAIL_PATTERN.test(email)) {
-      return fail<null>('邮箱格式不正确')
-    }
-    if (!/^\d{6}$/.test(code)) {
-      return fail<null>('请输入 6 位验证码')
-    }
-
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: 'email_change',
-    })
-    if (error) {
-      return fail<null>(error.message, error.code ?? undefined)
-    }
-
-    // profiles 是资料主存储，改绑后同步邮箱；失败只影响展示，不回滚认证结果
-    const { data } = await supabase.auth.getUser()
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ email: data.user.email ?? email })
-        .eq('id', data.user.id)
-      if (profileError) {
-        console.error('同步 profiles 邮箱失败:', profileError.message)
-      }
-    }
-
-    return { data: null, error: null }
-  },
-
-  /**
    * 退出登录
    */
   async logout(): Promise<void> {
@@ -293,7 +278,7 @@ export const AuthService = {
 
     const [{ data: profile, error: profileError }, { data: permissions, error: permissionError }]
       = await Promise.all([
-        supabase.from('profiles').select('username, avatar_url').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('username, avatar_url, email').eq('id', user.id).maybeSingle(),
         supabase.rpc('get_user_permissions'),
       ])
 
@@ -309,8 +294,8 @@ export const AuthService = {
 
     return {
       userId: user.id,
-      userName: profile?.username ?? user.email ?? '',
-      email: user.email ?? '',
+      userName: profile?.username ?? '',
+      email: profile?.email ?? '',
       avatar: profile?.avatar_url ?? undefined,
       roles: permission.roles ?? [],
       buttons: permission.buttons ?? [],

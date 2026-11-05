@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 import { useToast } from '@wot-ui/ui'
 import { LOGIN_PAGE } from '@/router/config'
 import { AuthService } from '@/service/auth'
+import { useUserStore } from '@/store/user'
 
 definePage({
   style: {
@@ -32,9 +33,15 @@ async function doRegister() {
     toast.error(error.message)
     return
   }
-  // 开启邮箱确认时不会直接返回会话，需用户点击邮件链接后再登录
+  // 关闭邮箱确认后 signUp 会直接返回会话，同步用户资料并返回上一页
+  if (data.session) {
+    await useUserStore().fetchUserInfo()
+    toast.success('注册成功')
+    uni.navigateBack()
+    return
+  }
   toast.show({
-    msg: data.session ? '注册成功' : '注册成功，请先确认邮箱',
+    msg: '注册成功，请登录',
   })
   uni.navigateTo({
     url: LOGIN_PAGE,
@@ -49,7 +56,7 @@ async function doRegister() {
     </view>
     <wd-input
       v-model="form.email"
-      placeholder="邮箱"
+      placeholder="邮箱（用于资料展示）"
       clearable
       custom-class="mt-6"
     />

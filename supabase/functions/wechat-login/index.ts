@@ -10,8 +10,14 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-/** 虚拟邮箱后缀：仅作为 Auth 登录标识，不对用户展示；需与前端 profile.vue 的 VIRTUAL_EMAIL_SUFFIX 保持一致 */
-const VIRTUAL_EMAIL_SUFFIX = '@wechat.local'
+/** 微信注册的虚拟邮箱域名：仅作为 Auth 登录标识，不对用户展示 */
+const VIRTUAL_EMAIL_DOMAIN = 'wechat.auth'
+
+/** 生成微信注册虚拟邮箱：时间 id + 随机串 */
+function createVirtualEmail(): string {
+  const timeId = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+  return `${timeId}@${VIRTUAL_EMAIL_DOMAIN}`
+}
 
 type SupabaseAdmin = ReturnType<typeof createClient>
 
@@ -121,7 +127,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     userId = await findUserId(admin, 'unionid', unionid)
   }
 
-  // 2. 用映射记录拿到账号当前邮箱（可能是用户后来绑定的真实邮箱）
+  // 2. 用映射记录拿到账号当前邮箱（虚拟登录标识）
   let email = ''
   if (userId) {
     const { data, error } = await admin.auth.admin.getUserById(userId)
@@ -134,9 +140,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  // 3. 新用户或历史账号：虚拟邮箱仅作为 Auth 登录标识
+  // 3. 新用户：生成时间 id 虚拟邮箱，仅作为 Auth 登录标识
   if (!email) {
-    email = `${openid}${VIRTUAL_EMAIL_SUFFIX}`
+    email = createVirtualEmail()
     const { error: createError } = await admin.auth.admin.createUser({
       email,
       email_confirm: true,
@@ -147,12 +153,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       },
     })
 
-    // 已注册过的微信用户直接复用，其余错误原样返回
-    const emailExists = createError
-      && (createError.code === 'email_exists'
-        || createError.code === 'user_already_exists'
-        || createError.message.toLowerCase().includes('already'))
-    if (createError && !emailExists) {
+    if (createError) {
       return json({ error: createError.message }, 400)
     }
   }

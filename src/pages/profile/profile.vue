@@ -31,16 +31,11 @@ const { userInfo } = storeToRefs(userStore)
 /** 角色展示文案 */
 const roleText = computed(() => (userInfo.value.roles?.length ? userInfo.value.roles.join('、') : t('profile.role.none')))
 
-/** 微信登录生成的虚拟邮箱后缀，带此后缀表示尚未绑定真实邮箱 */
-const VIRTUAL_EMAIL_SUFFIX = '@wechat.local'
-
-/** 是否尚未绑定真实邮箱 */
-const isVirtualEmail = computed(
-  () => !userInfo.value.email || userInfo.value.email.endsWith(VIRTUAL_EMAIL_SUFFIX),
-)
+/** 是否已填写真实邮箱（Auth 中的邮箱为虚拟登录标识，不参与展示） */
+const hasEmail = computed(() => !!userInfo.value.email)
 
 /** 邮箱展示文案 */
-const emailText = computed(() => (isVirtualEmail.value ? t('profile.email.unbound') : userInfo.value.email))
+const emailText = computed(() => (hasEmail.value ? userInfo.value.email : t('profile.email.unbound')))
 
 /** 资料编辑面板 */
 const profileVisible = ref(false)
@@ -155,6 +150,13 @@ function goSettings() {
   })
 }
 
+/** 跳转菜单编辑页 */
+function goMenusEdit() {
+  uni.navigateTo({
+    url: '/pages/menus/edit',
+  })
+}
+
 /** 修改密码面板 */
 const passwordVisible = ref(false)
 const passwordSubmitting = ref(false)
@@ -193,65 +195,35 @@ async function submitPassword() {
   }
 }
 
-/** 邮箱绑定面板 */
+/** 邮箱编辑面板 */
 const emailVisible = ref(false)
-const emailSending = ref(false)
-const emailConfirming = ref(false)
-/** 验证码是否已发送，用于切换面板操作 */
-const emailCodeSent = ref(false)
+const emailSaving = ref(false)
 const emailForm = reactive({
   email: '',
-  code: '',
 })
 
-/** 打开邮箱绑定面板并重置表单 */
+/** 打开邮箱编辑面板，回填 profiles 中的真实邮箱 */
 function openEmailPanel() {
-  emailForm.email = isVirtualEmail.value ? '' : userInfo.value.email
-  emailForm.code = ''
-  emailCodeSent.value = false
+  emailForm.email = userInfo.value.email
   emailVisible.value = true
 }
 
-/** 关闭邮箱绑定面板，提交过程中不允许收起 */
+/** 关闭邮箱编辑面板，保存过程中不允许收起 */
 function closeEmailPanel() {
-  if (emailSending.value || emailConfirming.value) {
+  if (emailSaving.value) {
     return
   }
   emailVisible.value = false
 }
 
-/** 发送邮箱验证码 */
-async function submitEmailCode() {
-  if (emailSending.value) {
+/** 保存真实邮箱（只更新 profiles，不触碰 Auth 虚拟邮箱） */
+async function submitEmailSave() {
+  if (emailSaving.value) {
     return
   }
-  emailSending.value = true
+  emailSaving.value = true
   try {
-    const { error } = await AuthService.sendEmailChangeCode(emailForm.email)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-    emailCodeSent.value = true
-    toast.success(t('profile.emailCodeSent'))
-  }
-  finally {
-    emailSending.value = false
-  }
-}
-
-/** 校验验证码并完成邮箱绑定 */
-async function submitEmailConfirm() {
-  if (emailConfirming.value) {
-    return
-  }
-  emailConfirming.value = true
-  try {
-    const { error } = await AuthService.confirmEmailChange(emailForm.email, emailForm.code)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
+    await UserService.updateEmail(emailForm.email)
     await userStore.fetchUserInfo()
     emailVisible.value = false
     toast.success(t('profile.emailBindSuccess'))
@@ -260,7 +232,7 @@ async function submitEmailConfirm() {
     toast.error(error instanceof Error ? error.message : t('profile.emailBindFailed'))
   }
   finally {
-    emailConfirming.value = false
+    emailSaving.value = false
   }
 }
 
@@ -339,6 +311,16 @@ async function handleLogout() {
           <view class="i-ri-settings-3-line mr-1 text-xl text-gray-500" />
         </template>
       </wd-cell>
+      <wd-cell
+        v-if="tokenStore.hasLogin"
+        :title="$t('menus.edit.title')"
+        is-link
+        @click="goMenusEdit"
+      >
+        <template #prefix>
+          <view class="i-ri-file-list-3-line mr-1 text-xl text-gray-500" />
+        </template>
+      </wd-cell>
     </wd-cell-group>
 
     <!-- 操作按钮 -->
@@ -393,7 +375,7 @@ async function handleLogout() {
       v-model="emailVisible"
       position="bottom"
       :z-index="1001"
-      :close-on-click-modal="!emailSending && !emailConfirming"
+      :close-on-click-modal="!emailSaving"
       safe-area-inset-bottom
       custom-class="rounded-t-3"
     >
@@ -408,41 +390,15 @@ async function handleLogout() {
           v-model="emailForm.email"
           :placeholder="$t('profile.emailPlaceholder')"
           clearable
-          :disabled="emailCodeSent"
           custom-class="mt-4"
         />
-        <wd-input
-          v-if="emailCodeSent"
-          v-model="emailForm.code"
-          :placeholder="$t('profile.codePlaceholder')"
-          type="number"
-          :maxlength="6"
-          clearable
-          custom-class="mt-3"
-        />
         <view class="mt-6 flex gap-3">
-          <wd-button block :disabled="emailSending || emailConfirming" @click="closeEmailPanel">
+          <wd-button block :disabled="emailSaving" @click="closeEmailPanel">
             {{ $t('profile.cancel') }}
           </wd-button>
-          <wd-button
-            v-if="!emailCodeSent"
-            block
-            type="primary"
-            :loading="emailSending"
-            @click="submitEmailCode"
-          >
-            {{ $t('profile.sendCode') }}
+          <wd-button block type="primary" :loading="emailSaving" @click="submitEmailSave">
+            {{ $t('profile.save') }}
           </wd-button>
-          <wd-button v-else block type="primary" :loading="emailConfirming" @click="submitEmailConfirm">
-            {{ $t('profile.confirmBind') }}
-          </wd-button>
-        </view>
-        <view
-          v-if="emailCodeSent"
-          class="mt-3 text-center text-xs text-primary active:opacity-60"
-          @click="submitEmailCode"
-        >
-          {{ $t('profile.resendCode') }}
         </view>
       </view>
     </wd-popup>

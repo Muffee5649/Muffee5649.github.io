@@ -234,7 +234,12 @@ onPullDownRefresh(() => {
     <!-- 主体：左侧分类栏 + 右侧菜品列表（美团式） -->
     <view v-else class="min-h-0 flex flex-1">
       <scroll-view class="h-full w-20 shrink-0 bg-white" scroll-y :show-scrollbar="false">
-        <wd-sidebar v-model="activeCategory" custom-class="!w-full" @change="onCategoryChange">
+        <wd-sidebar
+          v-model="activeCategory"
+          custom-class="!w-full"
+          custom-style="--wot-sidebar-item-font-size: 12px; --wot-sidebar-item-line-height: 16px; --wot-sidebar-item-padding: 10px 4px;"
+          @change="onCategoryChange"
+        >
           <wd-sidebar-item
             v-for="category in categories"
             :key="category.id"
@@ -379,5 +384,14 @@ onPullDownRefresh(() => {
      与自定义 tabbar 占位（50px + 底部安全区），否则购物车栏会被 tabbar 遮挡 */
   height: calc(100vh - var(--window-top, 0px) - 50px);
   height: calc(100vh - var(--window-top, 0px) - 50px - env(safe-area-inset-bottom));
+}
+
+/* 侧栏分类名：单行展示，超长省略，避免换行撑高选项 */
+.menus :deep(.wd-sidebar-item__badge) {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  word-break: keep-all;
 }
 </style>

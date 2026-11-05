@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { reactive } from 'vue'
 import { useToast } from '@wot-ui/ui'
+import { t } from '@/locale/index'
 import { useTokenStore } from '@/store/token'
 
 definePage({
@@ -23,7 +24,7 @@ async function doLogin() {
     return
   }
   if (!form.account || !form.password) {
-    toast.error('请输入账号和密码')
+    toast.error(t('auth.error.missingCredentials'))
     return
   }
   try {
