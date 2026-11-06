@@ -5,8 +5,10 @@ import { storeToRefs } from 'pinia'
 import { useToast } from '@wot-ui/ui'
 import { t } from '@/locale/index'
 import { useCartStore } from '@/store/cart'
-import { DishService } from '@/service/ordering'
-import type { OrderingMenuCategory, OrderingMenuDish } from '@/service/ordering'
+import { useTableStore } from '@/store/table'
+import { DiningTableService, DishService, parseTableQrPayload } from '@/service/ordering'
+import type { DiningTableStatus, OrderingMenuCategory, OrderingMenuDish, WorkbenchTable } from '@/service/ordering'
+import { ServiceError } from '@/service/shared'
 import type { AppDishCardData } from '@/components/app-dish-card/app-dish-card.vue'
 
 defineOptions({
@@ -30,6 +32,105 @@ const anchor = ref('')
 /** 购物车：dishId → 数量（store 管理，与下单确认页共享） */
 const cartStore = useCartStore()
 const { cart } = storeToRefs(cartStore)
+/** 提前绑定的桌号（与下单确认页共享） */
+const tableStore = useTableStore()
+/** 桌号选择弹层 */
+const showTablePicker = ref(false)
+const tableLoading = ref(false)
+const tableOptions = ref<WorkbenchTable[]>([])
+
+/** 桌台状态圆点 / 文案颜色（类名字符串供 UnoCSS 静态提取） */
+const STATUS_DOT: Record<DiningTableStatus, string> = {
+  idle: 'bg-emerald-500',
+  reserved: 'bg-amber-500',
+  occupied: 'bg-primary',
+  disabled: 'bg-gray-300',
+}
+
+const STATUS_TEXT: Record<DiningTableStatus, string> = {
+  idle: 'text-emerald-600',
+  reserved: 'text-amber-600',
+  occupied: 'text-primary',
+  disabled: 'text-gray-400',
+}
+
+/** 可绑定桌台：空闲 / 已约定 / 占用且有进行中开台（加单） */
+function isTableSelectable(table: WorkbenchTable): boolean {
+  return table.status === 'idle'
+    || table.status === 'reserved'
+    || (table.status === 'occupied' && !!table.activeSession)
+}
+
+function tableTypeLabel(table: WorkbenchTable): string {
+  return table.tableType ? t(`home.type.${table.tableType}`) : t('home.type.uncategorized')
+}
+
+/** 桌台卡片样式（已绑定高亮，不可选置灰） */
+function tableCellClass(table: WorkbenchTable): string[] {
+  const classes = table.id === tableStore.tableId
+    ? ['border-primary', 'bg-primary/5']
+    : ['border-gray-200', 'bg-white']
+  if (!isTableSelectable(table)) {
+    classes.push('opacity-50')
+  }
+  return classes
+}
+
+/** 打开桌号选择弹层并实时拉取桌台状态 */
+async function openTablePicker() {
+  showTablePicker.value = true
+  tableLoading.value = true
+  try {
+    tableOptions.value = await DiningTableService.getWorkbenchTables()
+  }
+  catch (error) {
+    console.log('桌台数据加载失败', error)
+    toast.error(t('menus.table.loadFailed'))
+  }
+  finally {
+    tableLoading.value = false
+  }
+}
+
+/** 绑定桌号 */
+function selectTable(table: WorkbenchTable) {
+  if (!isTableSelectable(table)) {
+    return
+  }
+  tableStore.bind(table.id, table.tableNo)
+  showTablePicker.value = false
+}
+
+/** 解除桌号绑定 */
+function clearBoundTable() {
+  tableStore.clear()
+  showTablePicker.value = false
+}
+
+/** 扫描桌号二维码：校验桌号与令牌匹配后自动绑定，当前页直接开始点餐 */
+function scanTableQr() {
+  uni.scanCode({
+    scanType: ['qrCode'],
+    success: async (res) => {
+      const payload = parseTableQrPayload(res.result)
+      if (!payload) {
+        toast.error(t('menus.table.scanInvalid'))
+        return
+      }
+      try {
+        const table = await DiningTableService.verifyQr(payload)
+        tableStore.bind(table.id, table.tableNo)
+        showTablePicker.value = false
+        toast.success(t('menus.table.scanSuccess', { no: table.tableNo }))
+      }
+      catch (error) {
+        console.log('扫码绑定桌号失败', error)
+        toast.error(error instanceof ServiceError ? error.message : t('menus.table.scanFailed'))
+      }
+    },
+  })
+}
+
 /** 购物车明细弹层 */
 const showCart = ref(false)
 /** 右侧列表当前滚动距离 */
@@ -226,6 +327,34 @@ onPullDownRefresh(() => {
 
 <template>
   <view class="menus flex flex-col bg-gray-100">
+    <!-- 顶部桌号：整行点击即可绑定 / 更换，下单确认页自动选中 -->
+    <view
+      class="flex items-center gap-2.5 border-b border-gray-200 bg-white px-3 py-2 active:opacity-70"
+      @tap="openTablePicker"
+    >
+      <view class="h-8 w-8 flex shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <view class="i-ri-restaurant-line text-base" />
+      </view>
+      <view class="min-w-0 flex-1">
+        <view class="text-2xs text-gray-400">
+          {{ $t('menus.table.label') }}
+        </view>
+        <view
+          class="truncate text-sm font-bold"
+          :class="tableStore.tableNo ? 'text-gray-800' : 'text-gray-400'"
+        >
+          {{ tableStore.tableNo || $t('menus.table.unbound') }}
+        </view>
+      </view>
+      <!-- #ifndef H5 -->
+      <view
+        class="i-ri-scan-line shrink-0 text-lg text-gray-500 active:opacity-70"
+        @tap.stop="scanTableQr"
+      />
+      <!-- #endif -->
+      <view class="i-ri-arrow-right-s-line shrink-0 text-base text-gray-400" />
+    </view>
+
     <view v-if="loading && !categories.length" class="flex flex-1 items-center justify-center">
       <wd-loading color="var(--wot-color-theme, #5D87FF)" />
     </view>
@@ -372,6 +501,61 @@ onPullDownRefresh(() => {
           {{ $t('menus.cart.checkout') }}
         </wd-button>
       </view>
+    </wd-popup>
+
+    <!-- 桌号选择弹层（z-index 高于自定义 tabbar 的 1000） -->
+    <wd-popup
+      v-model="showTablePicker"
+      position="bottom"
+      round
+      :z-index="1001"
+      custom-class="!bg-gray-50"
+    >
+      <view class="flex items-center justify-between px-4 pb-2 pt-4">
+        <text class="text-sm text-gray-800 font-bold">
+          {{ $t('menus.table.selectTitle') }}
+        </text>
+        <view
+          v-if="tableStore.tableNo"
+          class="flex items-center gap-1 text-3xs text-gray-400 active:opacity-70"
+          @tap="clearBoundTable"
+        >
+          <view class="i-ri-link-unlink text-14px" />
+          {{ $t('menus.table.clear') }}
+        </view>
+      </view>
+      <scroll-view class="h-[45vh] bg-white" scroll-y :show-scrollbar="false">
+        <view v-if="tableLoading" class="flex justify-center py-10">
+          <wd-loading color="var(--wot-color-theme, #5D87FF)" />
+        </view>
+        <wd-empty v-else-if="!tableOptions.length" :tip="$t('menus.table.empty')" />
+        <view v-else class="grid grid-cols-3 gap-2 px-3 pb-4 pt-3">
+          <view
+            v-for="table in tableOptions"
+            :key="table.id"
+            class="relative border rounded-3 border-solid p-2.5 active:opacity-70"
+            :class="tableCellClass(table)"
+            @tap="selectTable(table)"
+          >
+            <view class="truncate text-sm text-gray-800 font-bold">
+              {{ table.tableNo }}
+            </view>
+            <view class="mt-1 flex items-center gap-1 text-3xs text-gray-400">
+              <view class="i-ri-group-line" />
+              <text class="truncate">
+                {{ table.capacity ? t('ordering.table.capacity', { count: table.capacity }) : tableTypeLabel(table) }}
+              </text>
+            </view>
+            <view class="mt-1 flex items-center gap-1 text-3xs" :class="STATUS_TEXT[table.status]">
+              <view class="h-1.5 w-1.5 shrink-0 rounded-full" :class="STATUS_DOT[table.status]" />
+              {{ $t(`home.status.${table.status}`) }}
+            </view>
+            <view v-if="table.id === tableStore.tableId" class="absolute right-1.5 top-1.5">
+              <view class="i-ri-check-line text-14px text-primary" />
+            </view>
+          </view>
+        </view>
+      </scroll-view>
     </wd-popup>
 
     <wd-toast />

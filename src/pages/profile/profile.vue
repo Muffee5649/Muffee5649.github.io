@@ -157,6 +157,13 @@ function goMenusEdit() {
   })
 }
 
+/** 跳转桌号二维码页 */
+function goQrcode() {
+  uni.navigateTo({
+    url: '/pages/qrcode/index',
+  })
+}
+
 /** 修改密码面板 */
 const passwordVisible = ref(false)
 const passwordSubmitting = ref(false)
@@ -321,6 +328,18 @@ async function handleLogout() {
           <view class="i-ri-file-list-3-line mr-1 text-xl text-gray-500" />
         </template>
       </wd-cell>
+      <!-- #ifdef H5 -->
+      <wd-cell
+        v-if="tokenStore.hasLogin"
+        :title="$t('qrcode.title')"
+        is-link
+        @click="goQrcode"
+      >
+        <template #prefix>
+          <view class="i-ri-qr-code-line mr-1 text-xl text-gray-500" />
+        </template>
+      </wd-cell>
+      <!-- #endif -->
     </wd-cell-group>
 
     <!-- 操作按钮 -->

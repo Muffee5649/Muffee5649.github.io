@@ -36,6 +36,87 @@ export interface DiningTableSearchParams {
   status?: DiningTableStatus
 }
 
+/** 桌号二维码列表行（get_dining_table_qr_list 返回） */
+interface DiningTableQrRow {
+  id: number
+  table_no: string
+  table_type: DiningTableType | null
+  capacity: number | null
+  status: DiningTableStatus
+  qr_token: string
+  total: number
+}
+
+/** 桌号二维码列表项 */
+export interface DiningTableQrItem {
+  id: number
+  tableNo: string
+  tableType: DiningTableType | null
+  capacity: number | null
+  status: DiningTableStatus
+  /** 二维码校验令牌，与餐桌一对一 */
+  qrToken: string
+}
+
+/** 桌号二维码载荷：扫码后校验 tableId + token 是否匹配 */
+export interface TableQrPayload {
+  v: 1
+  type: 'dining_table'
+  tableId: number
+  tableNo: string
+  token: string
+}
+
+/** 扫码校验通过的餐桌 */
+export interface VerifiedTable {
+  id: number
+  tableNo: string
+  tableType: DiningTableType | null
+  capacity: number | null
+  status: DiningTableStatus
+  /** 进行中开台 id（占用桌加单用） */
+  sessionId: number | null
+}
+
+/** 二维码载荷序列化（二维码内容为 JSON 对象） */
+export function buildTableQrPayload(table: DiningTableQrItem): string {
+  const payload: TableQrPayload = {
+    v: 1,
+    type: 'dining_table',
+    tableId: table.id,
+    tableNo: table.tableNo,
+    token: table.qrToken,
+  }
+  return JSON.stringify(payload)
+}
+
+/** 解析扫码结果，非桌号二维码或字段不合法时返回 null */
+export function parseTableQrPayload(raw: string): TableQrPayload | null {
+  try {
+    const data = JSON.parse(raw) as Record<string, unknown> | null
+    if (!data || data.v !== 1 || data.type !== 'dining_table') {
+      return null
+    }
+    if (typeof data.token !== 'string' || !data.token) {
+      return null
+    }
+    const tableId = Number(data.tableId)
+    if (!Number.isInteger(tableId) || tableId <= 0) {
+      return null
+    }
+    return {
+      v: 1,
+      type: 'dining_table',
+      tableId,
+      tableNo: String(data.tableNo ?? ''),
+      token: data.token,
+    }
+  }
+  catch {
+    return null
+  }
+}
+
 /** 新增 / 编辑餐桌参数 */
 export interface DiningTableInput {
   /** 桌号，全局唯一，1~10 字符；有进行中开台的餐桌不允许修改桌号 */
@@ -211,6 +292,89 @@ export const DiningTableService = {
 
     if (error) {
       throw mapOrderingError(error)
+    }
+  },
+
+  /**
+   * 查询桌号二维码列表（管理端）：缺失令牌的餐桌会自动补一个，已打印二维码保持有效
+   */
+  async getQrList(
+    params: { current?: number, size?: number, tableNo?: string } = {},
+  ): Promise<PaginatedResponse<DiningTableQrItem>> {
+    const current = params.current ?? 1
+    const size = params.size ?? 100
+
+    const { data, error } = await supabase.rpc('get_dining_table_qr_list', {
+      p_current: current,
+      p_size: size,
+      p_table_no: params.tableNo ?? null,
+    })
+
+    if (error) {
+      throw mapOrderingError(error)
+    }
+
+    const rows = (data ?? []) as DiningTableQrRow[]
+
+    return {
+      records: rows.map(row => ({
+        id: row.id,
+        tableNo: row.table_no,
+        tableType: row.table_type,
+        capacity: row.capacity,
+        status: row.status,
+        qrToken: row.qr_token,
+      })),
+      current,
+      size,
+      total: rows[0]?.total ?? 0,
+    }
+  },
+
+  /**
+   * 重新生成桌号二维码令牌（管理端）：旧二维码立即失效
+   */
+  async rotateQrToken(id: number): Promise<string> {
+    const { data, error } = await supabase.rpc('rotate_table_qr_token', {
+      p_table_id: id,
+    })
+
+    if (error) {
+      throw mapOrderingError(error)
+    }
+
+    return data as string
+  },
+
+  /**
+   * 校验扫码载荷中的桌号与令牌是否匹配（未登录也可调用）
+   */
+  async verifyQr(payload: Pick<TableQrPayload, 'tableId' | 'token'>): Promise<VerifiedTable> {
+    const { data, error } = await supabase.rpc('verify_table_qr', {
+      p_table_id: payload.tableId,
+      p_token: payload.token,
+    })
+
+    if (error) {
+      throw mapOrderingError(error)
+    }
+
+    const row = data as {
+      id: number
+      table_no: string
+      table_type: DiningTableType | null
+      capacity: number | null
+      status: DiningTableStatus
+      session_id: number | null
+    }
+
+    return {
+      id: row.id,
+      tableNo: row.table_no,
+      tableType: row.table_type,
+      capacity: row.capacity,
+      status: row.status,
+      sessionId: row.session_id,
     }
   },
 

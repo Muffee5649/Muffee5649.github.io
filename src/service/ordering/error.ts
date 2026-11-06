@@ -49,6 +49,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   TABLE_HAS_RESERVATION_HISTORY: '该餐桌存在预定记录，仅可停用',
   TABLE_NO_LOCKED_BY_ACTIVE_SESSION: '该桌有进行中开台，不允许修改桌号',
   TABLE_OCCUPIED: '该桌已开台或正在就餐',
+  TABLE_QR_INVALID: '二维码无效，请使用对应桌台的二维码',
+  TABLE_QR_DISABLED: '该餐桌已停用，请联系工作人员',
 
   // 开台 / 订单
   DINER_COUNT_INVALID: '用餐人数需不小于 1',

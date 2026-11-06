@@ -11,6 +11,7 @@ import type {
 } from '@/service/ordering'
 import { ServiceError } from '@/service/shared'
 import { useCartStore } from '@/store/cart'
+import { useTableStore } from '@/store/table'
 
 defineOptions({
   name: 'Ordering',
@@ -23,6 +24,8 @@ definePage({
 
 const toast = useToast()
 const cartStore = useCartStore()
+/** 菜单页提前绑定的桌号 */
+const tableStore = useTableStore()
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -30,8 +33,8 @@ const submitting = ref(false)
 const categories = ref<OrderingMenuCategory[]>([])
 /** 全部餐桌 + 开台 / 预定摘要 */
 const tables = ref<WorkbenchTable[]>([])
-/** 已选餐桌 id */
-const selectedTableId = ref<number | null>(null)
+/** 已选餐桌 id：默认沿用菜单页提前绑定的桌号 */
+const selectedTableId = ref<number | null>(tableStore.tableId)
 
 /** 下单条目 */
 interface OrderingEntry {
@@ -111,7 +114,14 @@ function toggleTable(table: WorkbenchTable) {
   if (!isTableSelectable(table)) {
     return
   }
-  selectedTableId.value = selectedTableId.value === table.id ? null : table.id
+  if (selectedTableId.value === table.id) {
+    selectedTableId.value = null
+    tableStore.clear()
+    return
+  }
+  selectedTableId.value = table.id
+  // 与菜单页顶部桌号保持一致
+  tableStore.bind(table.id, table.tableNo)
 }
 
 /** 桌台卡片样式（选中高亮，不可选置灰） */
@@ -143,6 +153,15 @@ async function loadOrdering() {
     ])
     categories.value = menuResult
     tables.value = tableResult
+
+    // 提前绑定的桌号可能已被占用 / 停用，失效时取消选中
+    if (tableStore.tableId) {
+      const bound = tableResult.find(table => table.id === tableStore.tableId)
+      if (!bound || !isTableSelectable(bound)) {
+        selectedTableId.value = null
+        tableStore.clear()
+      }
+    }
   }
   catch (error) {
     console.log('下单页数据加载失败', error)
