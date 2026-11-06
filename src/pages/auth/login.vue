@@ -15,6 +15,7 @@ definePage({
 const tokenStore = useTokenStore()
 const toast = useToast()
 const loading = ref(false)
+const wxLoading = ref(false)
 
 const form = reactive({
   account: '',
@@ -43,6 +44,24 @@ async function doLogin() {
   }
   finally {
     loading.value = false
+  }
+}
+
+/** 微信快捷登录（仅小程序端展示） */
+async function doWxLogin() {
+  if (wxLoading.value) {
+    return
+  }
+  wxLoading.value = true
+  try {
+    await tokenStore.wxLogin()
+    uni.navigateBack()
+  }
+  catch (error) {
+    console.log('微信登录失败', error)
+  }
+  finally {
+    wxLoading.value = false
   }
 }
 
@@ -96,6 +115,28 @@ function goRegister() {
       >
         {{ $t('auth.login.submit') }}
       </wd-button>
+
+      <!-- 小程序端：微信快捷登录 -->
+      <!-- #ifdef MP-WEIXIN -->
+      <view class="mt-6 flex items-center gap-3">
+        <view class="h-px flex-1 bg-gray-100" />
+        <text class="text-2xs text-gray-300">{{ $t('auth.login.or') }}</text>
+        <view class="h-px flex-1 bg-gray-100" />
+      </view>
+      <wd-button
+        size="large"
+        plain
+        block
+        custom-class="!mt-4"
+        :loading="wxLoading"
+        @click="doWxLogin"
+      >
+        <view class="flex items-center justify-center gap-1">
+          <view class="i-ri-wechat-line text-16px text-emerald-500" />
+          {{ $t('auth.login.wechat') }}
+        </view>
+      </wd-button>
+      <!-- #endif -->
 
       <!-- 注册引导 -->
       <view class="mt-6 flex justify-center text-sm">

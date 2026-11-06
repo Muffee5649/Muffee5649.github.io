@@ -37,6 +37,8 @@
   "auth.login.accountPlaceholder": "Email or username",
   "auth.login.passwordPlaceholder": "Password",
   "auth.login.submit": "Sign In",
+  "auth.login.or": "or",
+  "auth.login.wechat": "Quick sign in with WeChat",
   "auth.login.toRegister": "No account yet? ",
   "auth.login.registerLink": "Sign Up",
   "auth.register.title": "Sign Up",

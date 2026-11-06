@@ -126,21 +126,21 @@ async function submitProfile() {
   }
 }
 
-/** 微信小程序下走微信登录，其余端跳登录页 */
+/** 微信小程序下优先微信登录，失败或非小程序端跳账号密码登录页 */
 async function handleLogin() {
+  // #ifdef MP-WEIXIN
   try {
-    // #ifdef MP-WEIXIN
     await tokenStore.wxLogin()
-    // #endif
-    // #ifndef MP-WEIXIN
-    uni.navigateTo({
-      url: `${LOGIN_PAGE}`,
-    })
-    // #endif
+    return
   }
   catch (error) {
-    console.error('登录失败', error)
+    console.error('微信登录失败，转账号密码登录', error)
   }
+  // #endif
+
+  uni.navigateTo({
+    url: `${LOGIN_PAGE}`,
+  })
 }
 
 /** 跳转设置页 */

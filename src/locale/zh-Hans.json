@@ -37,6 +37,8 @@
   "auth.login.accountPlaceholder": "邮箱或用户名",
   "auth.login.passwordPlaceholder": "密码",
   "auth.login.submit": "登录",
+  "auth.login.or": "或",
+  "auth.login.wechat": "微信快捷登录",
   "auth.login.toRegister": "还没有账号？",
   "auth.login.registerLink": "去注册",
   "auth.register.title": "注册",
