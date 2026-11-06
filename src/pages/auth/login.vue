@@ -101,7 +101,7 @@ function goRegister() {
         custom-class="mt-3"
       >
         <template #prefix>
-          <view class="i-carbon-lock mr-1 text-18px text-gray-400" />
+          <view class="i-ri-lock-line mr-1 text-18px text-gray-400" />
         </template>
       </wd-input>
 
