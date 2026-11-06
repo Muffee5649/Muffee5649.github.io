@@ -8,8 +8,6 @@ import type { AuthUserInfo } from './types'
  * 注册参数
  */
 export interface RegisterParams {
-  /** 真实邮箱（记录到 profiles，不作为 Supabase Auth 登录邮箱） */
-  email: string
   /** 用户名（3-20 个字符，大小写不敏感且唯一） */
   username: string
   /** 密码（不少于 6 位） */
@@ -124,21 +122,17 @@ function toServiceError(error: SupabaseLikeError): AuthServiceError {
 }
 
 /**
- * 认证服务：邮箱 + 用户名 + 密码注册，邮箱或用户名 + 密码登录
+ * 认证服务：用户名 + 密码注册，邮箱或用户名 + 密码登录
  */
 export const AuthService = {
   /**
    * 注册
-   * Auth 使用时间 id 生成的虚拟邮箱；真实邮箱通过 user_metadata 传给数据库触发器写入 profiles
+   * Auth 使用时间 id 生成的虚拟邮箱；真实邮箱由用户在个人信息页自行绑定
    */
   async register(params: RegisterParams): Promise<AuthResult> {
-    const email = params.email.trim().toLowerCase()
     const username = params.username.trim()
     const { password } = params
 
-    if (!EMAIL_PATTERN.test(email)) {
-      return fail('邮箱格式不正确')
-    }
     if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
       return fail(`用户名长度需为 ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} 个字符`)
     }
@@ -146,30 +140,22 @@ export const AuthService = {
       return fail(`密码长度不能少于 ${PASSWORD_MIN_LENGTH} 个字符`)
     }
 
-    // 提前校验用户名与真实邮箱占用，最终唯一性由数据库保证
-    const [{ data: usernameAvailable, error: usernameError }, { data: emailAvailable, error: emailError }]
-      = await Promise.all([
-        supabase.rpc('is_username_available', { p_username: username }),
-        supabase.rpc('is_email_available', { p_email: email }),
-      ])
+    // 提前校验用户名占用，最终唯一性由数据库保证
+    const { data: usernameAvailable, error: usernameError } = await supabase.rpc('is_username_available', {
+      p_username: username,
+    })
     if (usernameError) {
       return { data: null, error: toServiceError(usernameError) }
     }
-    if (emailError) {
-      return { data: null, error: toServiceError(emailError) }
-    }
     if (!usernameAvailable) {
       return fail('用户名已被占用', 'username_taken')
-    }
-    if (!emailAvailable) {
-      return fail('该邮箱已被使用', 'email_taken')
     }
 
     const { data, error } = await supabase.auth.signUp({
       email: createVirtualEmail('email.auth'),
       password,
       options: {
-        data: { username, email },
+        data: { username },
       },
     })
     if (error) {
