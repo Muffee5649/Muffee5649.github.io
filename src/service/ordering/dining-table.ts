@@ -58,17 +58,8 @@ export interface DiningTableQrItem {
   qrToken: string
 }
 
-/** 桌号二维码载荷：扫码后校验 tableId + token 是否匹配 */
-export interface TableQrPayload {
-  v: 1
-  type: 'dining_table'
-  tableId: number
-  tableNo: string
-  token: string
-}
-
-/** 扫码校验通过的餐桌 */
-export interface VerifiedTable {
+/** 扫码解析出的餐桌 */
+export interface ResolvedTable {
   id: number
   tableNo: string
   tableType: DiningTableType | null
@@ -76,45 +67,6 @@ export interface VerifiedTable {
   status: DiningTableStatus
   /** 进行中开台 id（占用桌加单用） */
   sessionId: number | null
-}
-
-/** 二维码载荷序列化（二维码内容为 JSON 对象） */
-export function buildTableQrPayload(table: DiningTableQrItem): string {
-  const payload: TableQrPayload = {
-    v: 1,
-    type: 'dining_table',
-    tableId: table.id,
-    tableNo: table.tableNo,
-    token: table.qrToken,
-  }
-  return JSON.stringify(payload)
-}
-
-/** 解析扫码结果，非桌号二维码或字段不合法时返回 null */
-export function parseTableQrPayload(raw: string): TableQrPayload | null {
-  try {
-    const data = JSON.parse(raw) as Record<string, unknown> | null
-    if (!data || data.v !== 1 || data.type !== 'dining_table') {
-      return null
-    }
-    if (typeof data.token !== 'string' || !data.token) {
-      return null
-    }
-    const tableId = Number(data.tableId)
-    if (!Number.isInteger(tableId) || tableId <= 0) {
-      return null
-    }
-    return {
-      v: 1,
-      type: 'dining_table',
-      tableId,
-      tableNo: String(data.tableNo ?? ''),
-      token: data.token,
-    }
-  }
-  catch {
-    return null
-  }
 }
 
 /** 新增 / 编辑餐桌参数 */
@@ -347,12 +299,11 @@ export const DiningTableService = {
   },
 
   /**
-   * 校验扫码载荷中的桌号与令牌是否匹配（未登录也可调用）
+   * 按小程序码 scene 中的令牌解析餐桌（未登录也可调用）
    */
-  async verifyQr(payload: Pick<TableQrPayload, 'tableId' | 'token'>): Promise<VerifiedTable> {
-    const { data, error } = await supabase.rpc('verify_table_qr', {
-      p_table_id: payload.tableId,
-      p_token: payload.token,
+  async resolveQrToken(token: string): Promise<ResolvedTable> {
+    const { data, error } = await supabase.rpc('resolve_table_qr', {
+      p_token: token,
     })
 
     if (error) {
@@ -376,6 +327,42 @@ export const DiningTableService = {
       status: row.status,
       sessionId: row.session_id,
     }
+  },
+
+  /**
+   * 批量生成桌号小程序码（管理端）：返回 令牌 → base64 图片 data URL
+   */
+  async getWxacodes(tokens: string[]): Promise<Record<string, string>> {
+    if (!tokens.length) {
+      return {}
+    }
+
+    const { data, error } = await supabase.functions.invoke('wechat-qrcode', {
+      body: { tokens },
+    })
+
+    if (error) {
+      const context = (error as { context?: Response }).context
+      let message = '小程序码生成失败，请重试'
+      if (context) {
+        try {
+          const body = await context.json() as { error?: string }
+          if (body?.error) {
+            message = body.error
+          }
+        }
+        catch {
+          // 非 JSON 错误响应，使用默认提示
+        }
+      }
+      throw new ServiceError(message, ServiceStatus.error)
+    }
+
+    const payload = data as { codes?: Record<string, string>, error?: string } | null
+    if (payload?.error) {
+      throw new ServiceError(payload.error, ServiceStatus.error)
+    }
+    return payload?.codes ?? {}
   },
 
   /**

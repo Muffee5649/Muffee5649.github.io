@@ -1,14 +1,13 @@
 <script lang="ts" setup>
 import { computed, nextTick, ref } from 'vue'
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { useToast } from '@wot-ui/ui'
 import { t } from '@/locale/index'
 import { useCartStore } from '@/store/cart'
 import { useTableStore } from '@/store/table'
-import { DiningTableService, DishService, parseTableQrPayload } from '@/service/ordering'
+import { DiningTableService, DishService } from '@/service/ordering'
 import type { DiningTableStatus, OrderingMenuCategory, OrderingMenuDish, WorkbenchTable } from '@/service/ordering'
-import { ServiceError } from '@/service/shared'
 import type { AppDishCardData } from '@/components/app-dish-card/app-dish-card.vue'
 
 defineOptions({
@@ -38,6 +37,8 @@ const tableStore = useTableStore()
 const showTablePicker = ref(false)
 const tableLoading = ref(false)
 const tableOptions = ref<WorkbenchTable[]>([])
+/** 已处理的小程序码 scene，避免 onLoad / onShow 重复绑定 */
+let handledScene = ''
 
 /** 桌台状态圆点 / 文案颜色（类名字符串供 UnoCSS 静态提取） */
 const STATUS_DOT: Record<DiningTableStatus, string> = {
@@ -97,38 +98,64 @@ function selectTable(table: WorkbenchTable) {
   if (!isTableSelectable(table)) {
     return
   }
+  handledScene = ''
   tableStore.bind(table.id, table.tableNo)
   showTablePicker.value = false
 }
 
 /** 解除桌号绑定 */
 function clearBoundTable() {
+  handledScene = ''
   tableStore.clear()
   showTablePicker.value = false
 }
 
-/** 扫描桌号二维码：校验桌号与令牌匹配后自动绑定，当前页直接开始点餐 */
-function scanTableQr() {
-  uni.scanCode({
-    scanType: ['qrCode'],
-    success: async (res) => {
-      const payload = parseTableQrPayload(res.result)
-      if (!payload) {
-        toast.error(t('menus.table.scanInvalid'))
-        return
-      }
-      try {
-        const table = await DiningTableService.verifyQr(payload)
-        tableStore.bind(table.id, table.tableNo)
-        showTablePicker.value = false
-        toast.success(t('menus.table.scanSuccess', { no: table.tableNo }))
-      }
-      catch (error) {
-        console.log('扫码绑定桌号失败', error)
-        toast.error(error instanceof ServiceError ? error.message : t('menus.table.scanFailed'))
-      }
-    },
-  })
+/** 小程序码 scene 为 32 位十六进制令牌，兼容未编码 / 已编码两种情况 */
+function parseScene(raw?: string | null): string {
+  if (typeof raw !== 'string' || !raw) {
+    return ''
+  }
+  let token = raw
+  try {
+    token = decodeURIComponent(raw)
+  }
+  catch {
+    // scene 未被编码时直接使用原值
+  }
+  return /^[0-9a-f]{32}$/.test(token) ? token : ''
+}
+
+/** 微信扫码进入小程序：按令牌解析并绑定桌号 */
+async function handleScene(raw?: string | null) {
+  const token = parseScene(raw)
+  if (!token || token === handledScene) {
+    return
+  }
+  handledScene = token
+
+  try {
+    const table = await DiningTableService.resolveQrToken(token)
+    tableStore.bind(table.id, table.tableNo)
+    showTablePicker.value = false
+    toast.success(t('menus.table.scanSuccess', { no: table.tableNo }))
+  }
+  catch (error) {
+    console.log('扫码绑定桌号失败', error)
+    toast.error(error instanceof Error ? error.message : t('menus.table.scanFailed'))
+  }
+}
+
+/** 读取本次进入小程序的 scene（热启动重新扫码时也会更新） */
+function readEnterScene(): string {
+  // #ifdef MP-WEIXIN
+  try {
+    return String(uni.getEnterOptionsSync().query?.scene ?? '')
+  }
+  catch {
+    return ''
+  }
+  // #endif
+  return ''
 }
 
 /** 购物车明细弹层 */
@@ -316,8 +343,13 @@ async function loadMenu() {
   }
 }
 
+onLoad((options) => {
+  handleScene((options as Record<string, string | undefined> | undefined)?.scene)
+})
+
 onShow(() => {
   loadMenu()
+  handleScene(readEnterScene())
 })
 
 onPullDownRefresh(() => {
@@ -346,12 +378,6 @@ onPullDownRefresh(() => {
           {{ tableStore.tableNo || $t('menus.table.unbound') }}
         </view>
       </view>
-      <!-- #ifndef H5 -->
-      <view
-        class="i-ri-scan-line shrink-0 text-lg text-gray-500 active:opacity-70"
-        @tap.stop="scanTableQr"
-      />
-      <!-- #endif -->
       <view class="i-ri-arrow-right-s-line shrink-0 text-base text-gray-400" />
     </view>
 

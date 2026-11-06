@@ -1,11 +1,10 @@
-export { buildTableQrPayload, DiningTableService, parseTableQrPayload } from './dining-table'
+export { DiningTableService } from './dining-table'
 export type {
   DiningTableInput,
   DiningTableItem,
   DiningTableQrItem,
   DiningTableSearchParams,
-  TableQrPayload,
-  VerifiedTable,
+  ResolvedTable,
   WorkbenchReservationSummary,
   WorkbenchSessionSummary,
   WorkbenchTable,
