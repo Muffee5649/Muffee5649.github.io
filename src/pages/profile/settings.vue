@@ -3,6 +3,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useDialog, useToast } from '@wot-ui/ui'
 import { t } from '@/locale/index'
 import { languageOptions, RADIUS_BASE_PX, themeColorOptions, useSettingStore } from '@/store/setting'
+import { useTheme } from '@/hooks/useTheme'
 
 definePage({
   style: {
@@ -11,6 +12,7 @@ definePage({
 })
 
 const settingStore = useSettingStore()
+const { themeColor, radius, setThemeColor, setRadius } = useTheme()
 const toast = useToast()
 const dialog = useDialog()
 
@@ -57,21 +59,21 @@ function handleItemClick(key: SettingItemKey) {
 
 /** 切换主题色 */
 function handleSwitchThemeColor(value: string) {
-  if (value === settingStore.themeColor) {
+  if (value === themeColor.value) {
     return
   }
-  settingStore.setThemeColor(value)
+  setThemeColor(value)
   toast.show(t('settings.switched'))
 }
 
 /** 弹窗内拖动滑条调整系统圆角，确认后生效 */
 async function handleSwitchRadius() {
-  radiusDraft.value = settingStore.radius
+  radiusDraft.value = radius.value
   const result = await dialog.confirm({ title: t('settings.radius') })
   if (result.action !== 'confirm') {
     return
   }
-  settingStore.setRadius(radiusDraft.value)
+  setRadius(radiusDraft.value)
   toast.show(t('settings.switched'))
 }
 
@@ -114,10 +116,10 @@ function handleLanguageSelect({ index }: { index: number }) {
             :style="{ backgroundColor: color.value }"
             @click.stop="handleSwitchThemeColor(color.value)"
           >
-            <view v-if="settingStore.themeColor === color.value" class="i-ri-check-line text-14px text-white" />
+            <view v-if="themeColor === color.value" class="i-ri-check-line text-14px text-white" />
           </view>
         </view>
-        <text v-else-if="item.key === 'radius'">{{ settingStore.radius }}%</text>
+        <text v-else-if="item.key === 'radius'">{{ radius }}%</text>
         <text v-else>{{ currentLanguageName }}</text>
       </wd-cell>
     </wd-cell-group>

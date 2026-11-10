@@ -1,24 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import type { ConfigProviderThemeVars } from '@wot-ui/ui'
-import { storeToRefs } from 'pinia'
+import { ref } from 'vue'
 import FgTabbar from '@/tabbar/index.vue'
-import { getPrimaryThemeVars, getRadiusPx, getThemeRgbChannels, useSettingStore } from '@/store/setting'
+import { useTheme } from '@/hooks/useTheme'
 import { isPageTabbar } from './tabbar/store'
 import { currRoute } from './utils'
 
-const settingStore = useSettingStore()
-const { themeColor, radius } = storeToRefs(settingStore)
-
-/** wot-ui 组件库主色色阶 */
-const themeVars = computed(
-  () => getPrimaryThemeVars(themeColor.value) as ConfigProviderThemeVars,
-)
-
-/** UnoCSS primary（含透明度修饰）、自定义 tabbar 主题色与全局圆角变量（百分比换算为 px） */
-const themeStyle = computed(
-  () => `--wot-color-theme:${themeColor.value};--wot-color-theme-rgb:${getThemeRgbChannels(themeColor.value)};--app-radius:${getRadiusPx(radius.value)}px;`,
-)
+const { themeVars, themeStyle } = useTheme()
 
 const isCurrentPageTabbar = ref(true)
 onShow(() => {
