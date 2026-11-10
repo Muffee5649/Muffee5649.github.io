@@ -4,6 +4,7 @@ import { customTabbarEnable, needHideNativeTabbar, tabbarCacheEnable } from './c
 import { setTabbarItem } from './i18n'
 import { tabbarList, tabbarStore } from './store'
 import TabbarItem from './TabbarItem.vue'
+import { showToast } from '@/utils/toast'
 
 // #ifdef MP-WEIXIN
 // 将自定义节点设置成虚拟的（去掉自定义组件包裹层），更加接近Vue组件的表现，能更好的使用flex属性
@@ -16,7 +17,7 @@ defineOptions({
  * 中间的鼓包tabbarItem的点击事件
  */
 function handleClickBulge() {
-  uni.showToast({
+  showToast({
     title: '点击了中间的鼓包tabbarItem',
     icon: 'none',
   })
@@ -75,7 +76,7 @@ onMounted(() => {
 })
 // #endif
 const activeColor = 'var(--wot-color-theme, #5D87FF)'
-const inactiveColor = '#666'
+const inactiveColor = 'var(--app-text-secondary, #666)'
 function getColorByIndex(index: number) {
   return tabbarStore.curIdx === index ? activeColor : inactiveColor
 }
@@ -88,7 +89,7 @@ onShow(() => {
 
 <template>
   <view v-if="customTabbarEnable" class="h-50px pb-safe">
-    <view class="border-and-fixed bg-white" @touchmove.stop.prevent>
+    <view class="border-and-fixed bg-[var(--app-surface)]" @touchmove.stop.prevent>
       <view class="h-50px flex items-center">
         <view
           v-for="(item, index) in tabbarList" :key="index"
@@ -118,7 +119,7 @@ onShow(() => {
   left: 0;
   right: 0;
   z-index: 1000;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--app-border, #eee);
   box-sizing: border-box;
 }
 // 中间鼓包的样式
@@ -134,8 +135,8 @@ onShow(() => {
   width: 250rpx;
   height: 250rpx;
   border-radius: 50%;
-  background-color: #fff;
-  box-shadow: inset 0 0 0 1px #fefefe;
+  background-color: var(--app-surface, #fff);
+  box-shadow: inset 0 0 0 1px var(--app-surface, #fefefe);
 
   &:active {
     // opacity: 0.8;

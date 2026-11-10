@@ -58,7 +58,7 @@ const pages = {
       },
     },
     {
-      path: 'pages/profile/profile',
+      path: 'pages/me/me',
       type: 'page',
       style: {
         navigationBarTitleText: '我的',

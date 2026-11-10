@@ -17,6 +17,5 @@ export default store
 
 // 模块统一导出
 export * from './cart'
-export * from './setting'
 export * from './token'
 export * from './user'

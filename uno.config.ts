@@ -79,7 +79,7 @@ export default defineConfig({
     'i-carbon-user',
     'i-carbon-ibm-watson-language-translator',
     'i-carbon-menu',
-    'i-carbon-restaurant',
+    // tabbar 订单图标仅在 src/tabbar/config.ts 中动态引用，需在此声明
     'i-carbon-receipt',
   ],
   rules: [
@@ -96,19 +96,10 @@ export default defineConfig({
   theme: {
     colors: {
       /**
-       * 主题色，用法如: text-primary
-       * 使用 RGB 通道变量以支持透明度修饰，如 bg-primary/10
-       * （直接使用 var(--wot-color-theme) 时 UnoCSS 无法计算 alpha，会退化为纯色）
+       * 主题色，用法如: text-primary、bg-primary/10
+       * 使用 --wot-color-theme-rgb（useTheme 下发的 RGB 通道）才能正确支持透明度修饰符
        */
       primary: 'rgba(var(--wot-color-theme-rgb, 93, 135, 255), <alpha-value>)',
-    },
-    borderRadius: {
-      /** 数字圆角跟随系统圆角变量（设置页配置的百分比换算后的 px），用法如: rounded-3 */
-      1: 'calc(var(--app-radius, 12px) / 4)',
-      2: 'calc(var(--app-radius, 12px) / 2)',
-      3: 'var(--app-radius, 12px)',
-      4: 'calc(var(--app-radius, 12px) * 1.5)',
-      5: 'calc(var(--app-radius, 12px) * 2)',
     },
     fontSize: {
       /** 提供更小号的字体，用法如：text-2xs */

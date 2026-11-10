@@ -311,8 +311,6 @@
   "settings.title": "Settings",
   "settings.language": "Language",
   "settings.themeColor": "Theme Color",
-  "settings.radius": "Radius",
-  "settings.radiusHint": "Slide to adjust, 100% equals {px}px",
   "settings.switched": "Switched",
   "profile.notLoggedIn": "Not signed in",
   "profile.loginHint": "Sign in to sync your profile",

@@ -113,7 +113,7 @@ const money = computed(() => `¥${(props.dish.priceCents / 100).toFixed(2)}`)
         <view v-if="showStepper" class="flex shrink-0 items-center gap-1" @tap.stop>
           <view
             v-if="count > 0"
-            class="h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-white active:opacity-70"
+            class="h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-primary active:opacity-70"
             @tap.stop="emit('minus', dish)"
           >
             <view class="i-ri-subtract-line text-12px" />

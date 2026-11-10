@@ -1,3 +1,6 @@
+// 引入 wot-ui 主题变量（包含 light / dark 两套语义变量，深色模式依赖它）
+@use '@wot-ui/ui/styles/theme/index.scss';
+
 // 测试用的 iconfont，可生效
 // @import './iconfont.css';
 
@@ -11,14 +14,23 @@
 
 :root,
 page {
-  // 系统主题色，运行时由设置页切换覆盖
-  --wot-color-theme: #5d87ff;
-  // 主题色 RGB 通道，供 UnoCSS 的 bg-primary/10 等透明度写法使用
-  --wot-color-theme-rgb: 93, 135, 255;
+  // 修改按主题色
+  // --wot-color-theme: #37c2bc;
 
   // 修改按钮背景色
   // --wot-button-primary-bg-color: green;
 }
+
+/* #ifdef H5 */
+/* H5 端变量挂在 documentElement 上：body 对应回弹区，页面容器对应页面底色 */
+body {
+  background-color: var(--app-bg-bounce, #fff);
+}
+
+uni-page-body {
+  background-color: var(--app-bg, #fff);
+}
+/* #endif */
 
 /*
 border-t-1

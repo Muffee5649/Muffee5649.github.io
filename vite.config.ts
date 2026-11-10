@@ -1,5 +1,4 @@
 import path from 'node:path'
-import fs from 'node:fs'
 import process from 'node:process'
 import Uni from '@uni-helper/plugin-uni'
 import { isMpWeixin } from '@uni-helper/uni-env'
@@ -58,14 +57,6 @@ export default defineConfig(({ command, mode }) => {
   const { UNI_PLATFORM, SKIP_OPEN_DEVTOOLS } = process.env
   console.log('UNI_PLATFORM -> ', UNI_PLATFORM) // 得到 mp-weixin, h5, app 等
 
-  // 演示分包只在开发环境保留，生产构建时整体排除（页面与分包都不进入 pages.json）
-  const isProdBuild = command === 'build' && mode === 'production'
-  const excludePages = ['**/components/**/**.*', '**/sections/**/**.*']
-  const subPackages = isProdBuild ? [] : ['src/pages-demo']
-  if (isProdBuild) {
-    excludePages.push('**/pages-demo/**/**.*')
-  }
-
   const envDir = path.resolve(process.cwd(), 'env')
   const env = loadEnv(mode, envDir)
   const localEnv = loadEnv(mode, envDir, '')
@@ -98,18 +89,12 @@ export default defineConfig(({ command, mode }) => {
         resolvers: [WotResolver()],
       }),
       UniPages({
-        exclude: excludePages,
+        exclude: ['**/components/**/**.*', '**/sections/**/**.*'],
         // pages 目录为 src/pages，分包目录不能配置在pages目录下！！
         // 是个数组，可以配置多个，但是不能为pages里面的目录！！
         // "src/pages-demo" 是unibest demo 预留的，方便后续插入demo示例
-        subPackages,
+        subPackages: ['src/pages-demo'],
         dts: 'src/types/uni-pages.d.ts',
-        // 生产构建时丢弃旧的 pages.json 缓存，避免 UniPages 把 pages-demo 分包重新合并回来
-        onBeforeLoadUserConfig() {
-          if (isProdBuild) {
-            fs.rmSync(path.resolve(process.cwd(), 'src/pages.json'), { force: true })
-          }
-        },
       }),
       // UniOptimization 插件需要 page.json 文件，故应在 UniPages 插件之后执行
       UniOptimization({
@@ -161,7 +146,7 @@ export default defineConfig(({ command, mode }) => {
       && mode === 'production'
       && visualizer({
         filename: './node_modules/.cache/visualizer/stats.html',
-        open: false,
+        open: true,
         gzipSize: true,
         brotliSize: true,
       }),

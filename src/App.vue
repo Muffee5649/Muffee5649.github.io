@@ -11,7 +11,7 @@ const router = proxy?.$router
 router && permission.install(router)
 
 onLaunch((options) => {
-  console.log('App.vue onLaunch', options)
+  // console.log('App.vue onLaunch', options)
 })
 
 onAppShow((options) => {

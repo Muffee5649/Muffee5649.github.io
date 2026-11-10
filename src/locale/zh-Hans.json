@@ -311,8 +311,6 @@
   "settings.title": "设置",
   "settings.language": "语言",
   "settings.themeColor": "主题色",
-  "settings.radius": "圆角",
-  "settings.radiusHint": "滑动调整，100% 对应 {px}px",
   "settings.switched": "已切换",
   "profile.notLoggedIn": "未登录",
   "profile.loginHint": "登录后可同步个人信息",

@@ -30,7 +30,6 @@ export default defineManifestConfig({
   'versionCode': '100',
   'transformPx': false,
   'locale': VITE_FALLBACK_LOCALE, // 'zh-Hans'
-  'lazyCodeLoading': 'requiredComponents',
   'h5': {
     router: {
       mode: VITE_APP_ROUTER_MODE as 'history' | 'hash',

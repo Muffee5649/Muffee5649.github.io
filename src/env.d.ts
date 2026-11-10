@@ -39,6 +39,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
   /** 是否清除console */
   readonly VITE_DELETE_CONSOLE: string
+  /** 版权信息中的主体名称 */
+  readonly VITE_COPYRIGHT_NAME?: string
   // 更多环境变量...
 }
 

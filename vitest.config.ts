@@ -24,6 +24,8 @@ function stripPagesJsonComments() {
 }
 
 export default defineConfig({
+  // 与 vite.config.ts 保持一致，让测试能读到 env/.env 里的 VITE_* 变量
+  envDir: './env',
   plugins: [stripPagesJsonComments(), vue()],
   test: {
     environment: 'jsdom',

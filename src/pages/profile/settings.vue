@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { onShow } from '@dcloudio/uni-app'
-import { useDialog, useToast } from '@wot-ui/ui'
-import { t } from '@/locale/index'
-import { languageOptions, RADIUS_BASE_PX, themeColorOptions, useSettingStore } from '@/store/setting'
+import { useToast } from '@wot-ui/ui'
+import { useLocale } from '@/hooks/useLocale'
 import { useTheme } from '@/hooks/useTheme'
+import { t } from '@/locale/index'
 
 definePage({
   style: {
@@ -11,17 +11,14 @@ definePage({
   },
 })
 
-const settingStore = useSettingStore()
-const { themeColor, radius, setThemeColor, setRadius } = useTheme()
+const { themeColor, themeList, setThemeColor } = useTheme()
+const { locale, languageList, switchLocale } = useLocale()
 const toast = useToast()
-const dialog = useDialog()
 
 /** 语言选择面板 */
 const actionSheetVisible = ref(false)
 
-/** 圆角滑条草稿值（百分比） */
-const radiusDraft = ref(0)
-const languageActions = languageOptions.map(item => ({ name: item.name }))
+const languageActions = languageList.map(item => ({ name: item.name }))
 
 onShow(() => {
   // 小程序页面标题不会随语言切换自动更新，进入页面时按当前语言重新设置
@@ -30,10 +27,10 @@ onShow(() => {
 
 /** 当前语言的展示名称 */
 const currentLanguageName = computed(
-  () => languageOptions.find(item => item.value === settingStore.locale)?.name ?? '',
+  () => languageList.find(item => item.value === locale.value)?.name ?? '',
 )
 
-type SettingItemKey = 'themeColor' | 'radius' | 'language'
+type SettingItemKey = 'themeColor' | 'language'
 
 interface SettingItem {
   key: SettingItemKey
@@ -44,15 +41,11 @@ interface SettingItem {
 /** 设置项：图标与标题统一循环渲染，仅内容区域按 key 区分 */
 const settingItems: SettingItem[] = [
   { key: 'themeColor', icon: 'i-ri-font-color', title: 'settings.themeColor' },
-  { key: 'radius', icon: 'i-ri-rounded-corner', title: 'settings.radius' },
   { key: 'language', icon: 'i-ri-translate', title: 'settings.language' },
 ]
 
 function handleItemClick(key: SettingItemKey) {
-  if (key === 'radius') {
-    handleSwitchRadius()
-  }
-  else if (key === 'language') {
+  if (key === 'language') {
     handleSwitchLanguage()
   }
 }
@@ -66,17 +59,6 @@ function handleSwitchThemeColor(value: string) {
   toast.show(t('settings.switched'))
 }
 
-/** 弹窗内拖动滑条调整系统圆角，确认后生效 */
-async function handleSwitchRadius() {
-  radiusDraft.value = radius.value
-  const result = await dialog.confirm({ title: t('settings.radius') })
-  if (result.action !== 'confirm') {
-    return
-  }
-  setRadius(radiusDraft.value)
-  toast.show(t('settings.switched'))
-}
-
 /** 打开语言选择面板 */
 function handleSwitchLanguage() {
   actionSheetVisible.value = true
@@ -84,13 +66,12 @@ function handleSwitchLanguage() {
 
 /** 选择语言并切换 */
 function handleLanguageSelect({ index }: { index: number }) {
-  const target = languageOptions[index]
-  if (!target || target.value === settingStore.locale) {
+  const target = languageList[index]
+  if (!target || target.value === locale.value) {
     return
   }
-  settingStore.setLocale(target.value)
-  // 切换后立即刷新当前页标题
-  uni.setNavigationBarTitle({ title: t('settings.title') })
+  // 切换后由 switchLocale 立即刷新当前页标题
+  switchLocale(target.value, { titleKey: 'settings.title' })
   toast.show(t('settings.switched'))
 }
 </script>
@@ -110,7 +91,7 @@ function handleLanguageSelect({ index }: { index: number }) {
         </template>
         <view v-if="item.key === 'themeColor'" class="flex items-center justify-end gap-1">
           <view
-            v-for="color in themeColorOptions"
+            v-for="color in themeList"
             :key="color.value"
             class="h-7 w-7 center flex-none rounded-full"
             :style="{ backgroundColor: color.value }"
@@ -119,7 +100,6 @@ function handleLanguageSelect({ index }: { index: number }) {
             <view v-if="themeColor === color.value" class="i-ri-check-line text-14px text-white" />
           </view>
         </view>
-        <text v-else-if="item.key === 'radius'">{{ radius }}%</text>
         <text v-else>{{ currentLanguageName }}</text>
       </wd-cell>
     </wd-cell-group>
@@ -129,17 +109,6 @@ function handleLanguageSelect({ index }: { index: number }) {
       :actions="languageActions"
       @select="handleLanguageSelect"
     />
-    <wd-dialog>
-      <view class="py-2">
-        <view class="flex items-center justify-between text-sm">
-          <text class="text-gray-500">{{ t('settings.radiusHint', { px: RADIUS_BASE_PX }) }}</text>
-          <text class="text-primary">{{ radiusDraft }}%</text>
-        </view>
-        <view class="mt-5 px-3">
-          <wd-slider v-model="radiusDraft" :min="0" :max="100" :step="1" popover-visible="never" />
-        </view>
-      </view>
-    </wd-dialog>
     <wd-toast />
   </view>
 </template>
