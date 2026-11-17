@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { onShow } from '@dcloudio/uni-app'
 import { useDialog, useToast } from '@wot-ui/ui'
 import { storeToRefs } from 'pinia'
 import { t } from '@/locale/index'
@@ -15,11 +14,6 @@ definePage({
   style: {
     navigationBarTitleText: '%tabbar.me%',
   },
-})
-
-onShow(() => {
-  // 小程序页面标题不会随语言切换自动更新，进入页面时按当前语言重新设置
-  uni.setNavigationBarTitle({ title: t('tabbar.me') })
 })
 
 const userStore = useUserStore()

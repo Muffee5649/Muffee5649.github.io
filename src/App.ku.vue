@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/useTheme'
 import FgTabbar from '@/tabbar/index.vue'
 import { registerDialog } from '@/utils/dialog'
 import { registerToast } from '@/utils/toast'
+import { refreshPageTitle } from '@/utils/i18n'
 import { isPageTabbar } from './tabbar/store'
 import { currRoute } from './utils'
 
@@ -29,6 +30,9 @@ onShow(() => {
   syncGlobalInstances()
   // 原生导航栏/窗口背景色需要按页面重新设置
   applySystemTheme(isDark.value)
+
+  // 页面标题按当前语言重新设置（小程序标题不会随语言切换自动更新）
+  refreshPageTitle()
 
   const { path } = currRoute()
   // “蜡笔小开心”提到本地是 '/pages/index/index'，线上是 '/' 导致线上 tabbar 不见了

@@ -33,6 +33,9 @@ const uniMock = {
   chooseImage: vi.fn(),
   getSystemInfoSync: vi.fn().mockReturnValue({ platform: 'devtools' }),
   getSystemInfo: vi.fn(),
+  // locale 在模块初始化时就会被读取（src/locale/index.ts、src/hooks/useLocale.ts），必须提供
+  getLocale: vi.fn().mockReturnValue('zh-Hans'),
+  setLocale: vi.fn(),
   onNetworkStatusChange: vi.fn(),
   getNetworkType: vi.fn(),
 }

@@ -102,30 +102,18 @@ export function getAllPages(key?: string) {
   return result
 }
 
+/**
+ * 获取当前页面在 pages.json 中配置的标题（可能是 %i18n.key% 形式的多语言占位符）
+ */
 export function getCurrentPageI18nKey() {
-  const routeObj = currRoute()
+  const { path } = currRoute()
+  // H5 线上首页是 '/'，需要还原成 pages.json 中 type 为 home 的页面
+  const targetPath = path === '/'
+    ? `/${(pages as PageMetaDatum[]).find(page => page.type === 'home')?.path ?? ''}`
+    : path
 
-  let currPage = (pages as PageMetaDatum[]).find(page => `/${page.path}` === routeObj.path)
-  if (!currPage) {
-    // 在主包中找不到对应的页面，则在分包中找
-    const allSubPages: PageMetaDatum[] = []
-    subPackages?.forEach((config) => {
-      config.pages?.forEach((cur) => {
-        allSubPages.push({
-          ...cur,
-          path: `/${config.root}/${cur.path}`,
-        })
-      })
-    })
-    currPage = allSubPages.find(page => page.path === routeObj.path)
-    if (!currPage) {
-      console.warn('路由不正确')
-      return ''
-    }
-  }
-  console.log(currPage)
-  console.log(currPage.style.navigationBarTitleText)
-  return currPage.style?.navigationBarTitleText || ''
+  const currPage = getAllPages().find(page => page.path === targetPath)
+  return currPage?.style?.navigationBarTitleText || ''
 }
 
 export function isCurrentPageTabbar() {

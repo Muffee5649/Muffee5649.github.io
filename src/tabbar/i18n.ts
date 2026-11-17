@@ -7,11 +7,12 @@ import { isNativeTabbar, tabbarList } from './config'
 export function getI18nText(key: string) {
   // 获取 %xxx% 中的 xxx
   const match = key.match(/%(.+?)%/)
-  if (match) {
-    key = match[1]
+  // 没有占位符说明配置的是普通文案，直接返回
+  if (!match) {
+    return key
   }
-  // console.log('设置多语言：', key)
-  return t(key)
+  // console.log('设置多语言：', match[1])
+  return t(match[1])
 }
 
 export function setTabbarItem() {

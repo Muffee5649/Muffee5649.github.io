@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { onShow } from '@dcloudio/uni-app'
 import { useToast } from '@wot-ui/ui'
 import { useLocale } from '@/hooks/useLocale'
 import { useTheme } from '@/hooks/useTheme'
@@ -19,11 +18,6 @@ const toast = useToast()
 const actionSheetVisible = ref(false)
 
 const languageActions = languageList.map(item => ({ name: item.name }))
-
-onShow(() => {
-  // 小程序页面标题不会随语言切换自动更新，进入页面时按当前语言重新设置
-  uni.setNavigationBarTitle({ title: t('settings.title') })
-})
 
 /** 当前语言的展示名称 */
 const currentLanguageName = computed(
